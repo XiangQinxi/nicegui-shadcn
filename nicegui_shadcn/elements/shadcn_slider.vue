@@ -22,6 +22,9 @@ export default {
   name: 'ShadcnSlider',
   components: { SliderRange, SliderRoot, SliderThumb, SliderTrack },
   props: {
+    // Declared so that NiceGUI's `loopback` prop does not fall through into the DOM as an
+    // attribute; it only tells the client whether to echo the value back locally.
+    loopback: { type: [Boolean, String], default: undefined },
     modelValue: { type: Number, default: 0 },
     min: { type: Number, default: 0 },
     max: { type: Number, default: 100 },

@@ -258,6 +258,20 @@ body.body--dark,
   [hidden] {
     display: none !important;
   }
+
+  /*
+   * NiceGUI's `Visibility` mixin hides an element by adding the *class*
+   * `hidden`, not the attribute, and Tailwind's own `.hidden` utility loses to
+   * any display utility that sorts after it in the utilities layer --
+   * `.inline-flex` does, so `set_visibility(False)` silently failed to hide
+   * buttons, badges, avatars and every other `inline-flex` component, leaving
+   * an invisible click target behind. A `!important` declaration in `base`
+   * outranks the utilities layer (the layer order reverses for `!important`),
+   * so this one rule covers class and attribute alike.
+   */
+  .hidden {
+    display: none !important;
+  }
 }
 
 /* ------------------------------------------------------------------ *

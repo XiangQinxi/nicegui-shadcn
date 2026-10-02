@@ -14,6 +14,9 @@
 export default {
   name: 'ShadcnTextarea',
   props: {
+    // Declared so that NiceGUI's `loopback` prop does not fall through into the DOM as an
+    // attribute; it only tells the client whether to echo the value back locally.
+    loopback: { type: [Boolean, String], default: undefined },
     id: { type: String, default: undefined },
     modelValue: { type: [String, Number, Array], default: '' },
     placeholder: { type: String, default: null },

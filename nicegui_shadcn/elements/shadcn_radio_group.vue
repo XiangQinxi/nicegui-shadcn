@@ -37,6 +37,9 @@ export default {
   name: 'ShadcnRadioGroup',
   components: { RadioGroupIndicator, RadioGroupItem, RadioGroupRoot },
   props: {
+    // Declared so that NiceGUI's `loopback` prop does not fall through into the DOM as an
+    // attribute; it only tells the client whether to echo the value back locally.
+    loopback: { type: [Boolean, String], default: undefined },
     id: { type: String, default: 'shadcn-radio' },
     modelValue: { type: String, default: undefined },
     options: { type: Array, default: () => [] },

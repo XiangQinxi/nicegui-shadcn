@@ -6508,6 +6508,9 @@ body.body--dark, .dark {
   [hidden] {
     display: none !important;
   }
+  .hidden {
+    display: none !important;
+  }
 }
 .nicegui-shadcn-surface {
   background-color: var(--background);

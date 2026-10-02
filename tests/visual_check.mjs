@@ -862,6 +862,13 @@ try {
     .map((b) => b.innerText.trim()));
   check('no button overflows its own box', spilling.length === 0, spilling);
 
+  // NiceGUI hands `loopback` down as a Vue prop. A template that does not declare it receives it
+  // in `$attrs`, and Vue renders that onto the root element — invalid HTML, and a reliable signal
+  // that the template is missing the declaration.
+  const leaked = await page.evaluate(() => [...document.querySelectorAll('[loopback]')]
+    .map((el) => `${el.tagName.toLowerCase()}${el.id ? '#' + el.id : ''}`));
+  check('no loopback prop leaks into the DOM', leaked.length === 0, leaked);
+
   console.log('\n' + JSON.stringify({ errors: consoleErrors, failures, button: btn }, null, 2));
 } finally {
   await browser.close();

@@ -62,6 +62,9 @@ const ELLIPSIS_CLASS = 'flex size-9 items-center justify-center';
 export default {
   name: 'ShadcnPagination',
   props: {
+    // Declared so that NiceGUI's `loopback` prop does not fall through into the DOM as an
+    // attribute; it only tells the client whether to echo the value back locally.
+    loopback: { type: [Boolean, String], default: undefined },
     modelValue: { type: Number, default: 1 },
     total: { type: Number, default: 1 },
     siblings: { type: Number, default: 1 },
