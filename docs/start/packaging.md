@@ -22,7 +22,7 @@
 仓库里现成的 0.1.3 产物可以直接核对：
 
 ```
-dist/nicegui_shadcn-0.1.3-py3-none-any.whl    276,559 B   102 个条目
+dist/nicegui_shadcn-0.1.3-py3-none-any.whl    278,956 B   102 个条目
 dist/nicegui_shadcn-0.1.3.tar.gz              ~1.3 MB     147 个文件
 ```
 

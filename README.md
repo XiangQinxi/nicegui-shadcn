@@ -423,9 +423,17 @@ theming.use_base_color('zinc')          # neutral/stone/zinc/mauve/olive/mist/ta
 theming.set_colors(primary='#2563eb')   # tweak individual light-mode tokens
 theming.set_dark_colors(primary='#60a5fa')
 theming.set_radius(0.75)                # every corner derives from --radius
+theming.set_variables(spacing='0.22rem')  # any other CSS variable
 theming.add_color('warning', light='#f59e0b', dark='#fbbf24')
 theming.reset()                         # back to the compiled default
 ```
+
+Two things surprise people here. The compiled default *is* `neutral`, and the seven base
+colours differ only in chroma (at most 0.019) while all of them share `--radius: 0.625rem` —
+so `use_base_color()` is a subtle change that never moves a corner. And Tailwind's
+`@theme inline` inlines `--font-sans`, `--shadow-*` and the whole `--radius-sm` … `--radius-4xl`
+ladder into the utilities at build time, so overriding those does nothing; `set_variables()`
+warns whenever a name is not read through `var()` by the shipped stylesheet.
 
 `add_color()` defines the token and generates the matching `bg-`/`text-`/`border-`/`ring-`/
 `fill-`/`stroke-`/`outline-`/`divide-` utilities plus their `dark:` variants, so a colour

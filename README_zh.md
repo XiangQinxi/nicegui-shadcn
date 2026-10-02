@@ -412,9 +412,16 @@ theming.use_base_color('zinc')          # neutral/stone/zinc/mauve/olive/mist/ta
 theming.set_colors(primary='#2563eb')   # tweak individual light-mode tokens
 theming.set_dark_colors(primary='#60a5fa')
 theming.set_radius(0.75)                # every corner derives from --radius
+theming.set_variables(spacing='0.22rem')  # any other CSS variable
 theming.add_color('warning', light='#f59e0b', dark='#fbbf24')
 theming.reset()                         # back to the compiled default
 ```
+
+这里有两件事容易让人意外。编译进样式表的默认主题**本来就是 `neutral`**，而七套基础色彼此只在
+彩度上差 0.019 以内、`--radius` 又都是 `0.625rem` —— 所以 `use_base_color()` 的变化很细微，而且
+永远不会改变圆角。另外，Tailwind 的 `@theme inline` 会把 `--font-sans`、`--shadow-*` 以及整条
+`--radius-sm` … `--radius-4xl` 阶梯在构建期内联进工具类，改这些没有任何效果；`set_variables()`
+在遇到随包样式表从不通过 `var()` 读取的名字时会给出警告。
 
 `add_color()` 会定义新的 token，并生成配套的 `bg-`/`text-`/`border-`/`ring-`/`fill-`/
 `stroke-`/`outline-`/`divide-` 工具类以及它们的 `dark:` 变体，让 shadcn 没提供的颜色用起来和

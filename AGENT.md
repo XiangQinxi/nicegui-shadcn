@@ -57,7 +57,7 @@ python tests/test_render.py       # 61 checks: every component renders server-si
 python tests/audit_classes.py     # 395 tokens: every class used in Python exists in the CSS
 python tests/check_examples.py    # every Markdown sample binds to a real signature
 python tests/check_readme.py      # README.md and README_zh.md: blocks identical, anchors live
-python tests/test_theming.py      # 85 checks: base-colour registry, radius ladder, injection
+python tests/test_theming.py      # 107 checks: base-colour registry, radius ladder, injection
 python tests/check_dist.py        # wheel/sdist contents (skips until `poetry build` has run)
 python examples/demo.py           # start the demo (port 8080), then:
 node tests/visual_check.mjs http://127.0.0.1:8080/   # 34 checks in headless Edge
@@ -237,6 +237,20 @@ Generated utilities for a custom colour are wrapped in `@layer utilities { … }
 `!important`, because for `!important` declarations the layer order **reverses** — see
 below. Quasar ships its own `.bg-warning`, and an unlayered `!important` loses to every
 layered one.
+
+`set_variables()` / `set_dark_variables()` write arbitrary custom properties, and the catch is
+that **`@theme inline` inlines a theme variable's value into the utilities at build time** — the
+custom property does not even survive into the stylesheet. The compiled `static/shadcn.css` reads
+only ~100 properties through `var()`: the design tokens, `--radius`, `--spacing`, `--tracking-*`,
+`--leading-*`, `--text-*`, `--container-*`. It never declares `--font-sans`, `--shadow-md` or the
+`--radius-sm … --radius-4xl` ladder (the radius utilities compile to `calc(var(--radius) * N)`
+instead). `_consumed_variables()` / `_declared_variables()` scan the shipped stylesheet once, and
+`_warn_about_unread()` raises a `UserWarning` (once per name) for a name that starts with
+`_INLINED_PREFIXES` or is declared-but-unread — both are silent no-ops that look exactly like the
+library being broken. A name the stylesheet never heard of is *not* warned about: `--brand` read
+by your own CSS is the whole point of the API.
+`set_radius()` rejects a unitless string (`'0.75'`) for the same reason — it would emit invalid
+CSS that the browser drops without a word.
 
 ---
 

@@ -14,10 +14,11 @@ whatever is set here wins by source order::
     theming.set_radius(0.75)
     theming.set_colors(primary='#2563eb')
     theming.set_dark_colors(primary='#60a5fa')
+    theming.set_variables(spacing='0.22rem', tracking_tight='-0.03em')
     theming.add_color('warning', light='#f59e0b', dark='#fbbf24',
                       foreground_light='#1c1917', foreground_dark='#1c1917')
 
-Four details are worth knowing before reading the implementation.
+Five details are worth knowing before reading the implementation.
 
 *Every* function can be called either before ``ui.run()`` (the head block is
 ``shared``, so it reaches every page) or later at runtime: the injected block
@@ -41,6 +42,13 @@ large and rarely needed; add the token to your own stylesheet and rebuild if you
 need them.  Retheming an existing token with :func:`set_colors` always keeps the
 full matrix.
 
+The theme compiled into ``static/shadcn.css`` is already shadcn's ``neutral``
+palette, and all seven base colours are near-neutral by design: they differ by a
+chroma of at most 0.019, and every one of them carries the same ``--radius`` of
+``0.625rem``.  Switching base colour is therefore subtle, and it never moves a
+corner -- reach for :func:`set_radius`, :func:`set_colors` or
+:func:`set_variables` when you want a change you can see.
+
 The seven base colours published at ``https://ui.shadcn.com/r/colors/<name>.json``
 are bundled in ``static/base-colors.json``; ``tests/update_base_colors.py``
 refreshes that asset.
@@ -52,6 +60,7 @@ import asyncio
 import difflib
 import json
 import re
+import warnings
 from pathlib import Path
 from string import Template
 from typing import Any
@@ -69,11 +78,14 @@ __all__ = [
     'reset',
     'set_colors',
     'set_dark_colors',
+    'set_dark_variables',
     'set_radius',
+    'set_variables',
     'use_base_color',
 ]
 
 _BASE_COLORS_PATH = Path(__file__).parent / 'static' / 'base-colors.json'
+_STYLESHEET_PATH = Path(__file__).parent / 'static' / 'shadcn.css'
 
 BASE_COLORS = ('neutral', 'stone', 'zinc', 'mauve', 'olive', 'mist', 'taupe')
 '''The base colours shadcn publishes (https://ui.shadcn.com/docs/theming).'''
@@ -120,6 +132,15 @@ _FAMILIES = (
 _NAME_RE = re.compile(r'^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$')
 _FORBIDDEN = frozenset(';{}<>')
 
+_LENGTH_UNITS = ('px', 'rem', 'em', 'ex', 'ch', 'cap', 'ic', 'lh', 'rlh', 'vw', 'vh', 'vi', 'vb',
+                 'vmin', 'vmax', 'svw', 'svh', 'lvw', 'lvh', 'dvw', 'dvh', 'cm', 'mm', 'q', 'in',
+                 'pt', 'pc', '%')
+_LENGTH_RE = re.compile(
+    r'^(?:0'
+    r'|(?:\d+(?:\.\d+)?|\.\d+)(?:' + '|'.join(_LENGTH_UNITS) + r')'
+    r'|(?:calc|clamp|min|max|var)\(.+\))$'
+)
+
 _BODY = Template("""(() => {
   const id = '$style_id';
   document.querySelectorAll('style#' + id).forEach((element) => element.remove());
@@ -134,6 +155,8 @@ _REPLACE = Template('<script>\n' + _BODY.template + '\n</script>')
 
 _light: dict[str, str] = {}
 _dark: dict[str, str] = {}
+_variables: dict[str, str] = {}
+_dark_variables: dict[str, str] = {}
 _radius: str | None = None
 _custom: dict[str, dict[str, str | None]] = {}
 _pushed: str | None = None
@@ -188,6 +211,48 @@ def set_dark_colors(**tokens: str) -> None:
     _apply()
 
 
+def set_variables(**variables: str) -> None:
+    """Set any other CSS custom property in the light ``:root`` block.
+
+    :param variables: custom property names without the leading ``--``, with
+        underscores standing in for hyphens (``spacing`` sets ``--spacing``)
+
+    :func:`set_colors` and :func:`set_radius` cover the design tokens of shadcn's
+    registry; this is the escape hatch for everything else::
+
+        theming.set_variables(spacing='0.22rem',        # rescales every p-*, m-*, gap-*
+                              tracking_tight='-0.03em',  # and one of the type scales
+                              brand='#0ea5e9')          # or a variable of your own
+
+    Only custom properties that the compiled stylesheet *reads through* ``var()``
+    can change the shipped utilities.  That is true of the design tokens,
+    ``--radius``, ``--spacing``, the ``--tracking-*`` / ``--leading-*`` /
+    ``--text-*`` / ``--container-*`` scales, and the ``--chart-*`` ramp -- but not
+    of Tailwind's own theme variables such as ``--font-sans``, ``--shadow-md`` or
+    the derived ``--radius-sm`` … ``--radius-4xl``: ``@theme inline`` bakes those
+    values into the utilities at build time, so overriding one at runtime changes
+    nothing.  A name that the stylesheet never reads triggers a ``UserWarning``
+    saying so, because that failure is otherwise completely silent.
+
+    Values are emitted after the colour tokens, so a name given here also wins
+    over :func:`set_colors`.  Names are lower-cased kebab-case and values must be
+    non-empty strings -- a unitless number would compile to CSS that the browser
+    silently drops, which is the other failure mode worth refusing.
+    """
+    cleaned = _clean_variables(variables, 'set_variables')
+    _warn_about_unread(cleaned)
+    _variables.update(cleaned)
+    _apply()
+
+
+def set_dark_variables(**variables: str) -> None:
+    """Override custom properties in dark mode, like :func:`set_variables`."""
+    cleaned = _clean_variables(variables, 'set_dark_variables')
+    _warn_about_unread(cleaned)
+    _dark_variables.update(cleaned)
+    _apply()
+
+
 def set_radius(value: float | str) -> None:
     """Set the ``--radius`` token that every corner of the design derives from.
 
@@ -202,7 +267,16 @@ def set_radius(value: float | str) -> None:
     if isinstance(value, bool) or not isinstance(value, (int, float, str)):
         raise TypeError('set_radius() takes a number of rem or a CSS length string, '
                         f'not {type(value).__name__}')
-    _radius = _value(value, 'set_radius()') if isinstance(value, str) else f'{value:g}rem'
+    if isinstance(value, str):
+        text = _value(value, 'set_radius()', 'CSS length')
+        if not _LENGTH_RE.match(text):
+            raise ValueError(f'set_radius() got {value!r}, which is not a CSS length. '
+                             "Pass a number of rem (0.75) or a length with a unit ('12px').")
+        _radius = text
+    elif value < 0:
+        raise ValueError(f'set_radius() got {value!r}; a corner radius cannot be negative')
+    else:
+        _radius = f'{value:g}rem'
     _radius_locked = True
     _apply()
 
@@ -260,6 +334,8 @@ def reset() -> None:
     _light.clear()
     _dark.clear()
     _custom.clear()
+    _variables.clear()
+    _dark_variables.clear()
     _radius = None
     _radius_locked = False
     _apply()
@@ -271,6 +347,8 @@ def current() -> dict[str, Any]:
         'radius': _radius,
         'light': dict(_light),
         'dark': dict(_dark),
+        'variables': dict(_variables),
+        'dark_variables': dict(_dark_variables),
         'colors': {name: dict(spec) for name, spec in sorted(_custom.items())},
     }
 
@@ -283,17 +361,20 @@ def css() -> str:
     """
     light = _ordered(_tokens('light'))
     dark = _ordered(_tokens('dark'))
-    if not light and not dark and _radius is None:
+    if not light and not dark and _radius is None and not _variables and not _dark_variables:
         return ''
     blocks = ['/* nicegui-shadcn theme - generated by nicegui_shadcn.theming */']
     root: dict[str, str] = {}
     if _radius is not None:
         root['radius'] = _radius
     root.update(light)
+    root.update(_variables)
     if root:
         blocks.append(_rule(':root', root))
-    if dark:
-        blocks.append(_rule(_DARK_SELECTOR, dark))
+    dark_tokens = dict(dark)
+    dark_tokens.update(_dark_variables)
+    if dark_tokens:
+        blocks.append(_rule(_DARK_SELECTOR, dark_tokens))
     utilities = _utility_rules()
     if utilities:
         blocks.append('@layer utilities {\n' + '\n'.join(utilities) + '\n}')
@@ -426,6 +507,83 @@ def _clean(tokens: dict[str, str], where: str) -> dict[str, str]:
             for key, value in tokens.items()}
 
 
+def _clean_variables(variables: dict[str, str], where: str) -> dict[str, str]:
+    return {_variable_name(key, where): _value(value, f'{where}({key}=...)', 'CSS value')
+            for key, value in variables.items()}
+
+
+def _variable_name(key: str, where: str) -> str:
+    name = key.strip()
+    if name.startswith('--'):
+        name = name[2:]
+    name = name.replace('_', '-').lower()
+    if not _NAME_RE.match(name):
+        raise ValueError(f'{where}() got an invalid CSS variable name {key!r}. '
+                         'Use a kebab-case name such as "font_sans" or "--shadow-md".')
+    return name
+
+
+_consumed: frozenset[str] | None = None
+_declared: frozenset[str] | None = None
+_warned: set[str] = set()
+
+# Tailwind's `@theme inline` substitutes its own theme variables into the utilities at build
+# time and omits the custom property entirely, so neither the value nor the declaration ends
+# up in static/shadcn.css.  Writing one of these is a no-op with no trace anywhere, which is
+# exactly what "the theme does not work" looks like from the outside.
+_INLINED_PREFIXES = (
+    'font-', 'shadow', 'blur', 'drop-shadow', 'inset-shadow', 'text-shadow',
+    'radius-', 'default-transition-', 'ease-', 'animate-',
+)
+
+
+def _consumed_variables() -> frozenset[str]:
+    """Every custom property the compiled stylesheet reads through ``var()``."""
+    global _consumed
+    if _consumed is None:
+        _consumed = frozenset(re.findall(r'var\(\s*--([a-zA-Z0-9-]+)',
+                                         _STYLESHEET_PATH.read_text(encoding='utf-8')))
+    return _consumed
+
+
+def _declared_variables() -> frozenset[str]:
+    """Every custom property the compiled stylesheet declares."""
+    global _declared
+    if _declared is None:
+        _declared = frozenset(re.findall(r'(?<![\w-])--([a-zA-Z0-9-]+)\s*:',
+                                         _STYLESHEET_PATH.read_text(encoding='utf-8')))
+    return _declared
+
+
+def _dead_variable_reason(name: str) -> str:
+    """Why overriding ``name`` cannot change anything the library ships, or ``''``.
+
+    A name the library never heard of is left alone: defining ``--brand`` for your own CSS is
+    the point of :func:`set_variables`, and warning about it would be noise.
+    """
+    if name in _declared_variables():
+        return 'the stylesheet declares it but never reads it back through var()'
+    if name.startswith(_INLINED_PREFIXES):
+        return ("Tailwind's @theme inline bakes it into the utilities at build time, so "
+                'neither its declaration nor a var() lookup survives into the stylesheet')
+    return ''
+
+
+def _warn_about_unread(variables: dict[str, str]) -> None:
+    """Warn once per name that the shipped stylesheet cannot act on."""
+    consumed = _consumed_variables()
+    for name in variables:
+        if name in consumed or name in _warned:
+            continue
+        reason = _dead_variable_reason(name)
+        if not reason:
+            continue
+        _warned.add(name)
+        warnings.warn(f'--{name} cannot change any utility shipped with nicegui-shadcn: '
+                      f'{reason}. It is written to :root all the same, so your own CSS can '
+                      f'still read it.', UserWarning, stacklevel=3)
+
+
 def _token_name(key: str, where: str) -> str:
     name = key.strip().replace('_', '-').lower()
     if name not in COLOR_TOKENS:
@@ -436,9 +594,9 @@ def _token_name(key: str, where: str) -> str:
     return name
 
 
-def _value(value: object, where: str) -> str:
+def _value(value: object, where: str, kind: str = 'CSS colour') -> str:
     if not isinstance(value, str):
-        raise TypeError(f'{where} must be a CSS colour string, not {type(value).__name__}')
+        raise TypeError(f'{where} must be a {kind} string, not {type(value).__name__}')
     text = value.strip()
     if not text:
         raise ValueError(f'{where} must not be empty')

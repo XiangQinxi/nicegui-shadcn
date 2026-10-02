@@ -26,14 +26,15 @@ shadcn 的“主题”不是一套皮肤，而是一组 CSS 变量：组件本�
 组件为什么不需要任何配合，见 {doc}`dark-mode` —— 一句话：`bg-primary` 编译成
 `background-color: var(--primary) !important`，所以换掉 `--primary` 就等于换掉所有主按钮。
 
-## 三种改法
+## 几种改法
 
 | 想做什么 | 用什么 | 生效时机 |
 | --- | --- | --- |
 | 换成 shadcn 官方的另一套基础色 | `theming.use_base_color('zinc')` | 立即 |
-| 微调某几个 token | `theming.set_colors(primary='#2563eb')` | 立即 |
+| 微调某几个色板 token | `theming.set_colors(primary='#2563eb')` | 立即 |
 | 改圆角基准 | `theming.set_radius(0.75)` | 立即 |
 | 加一个 shadcn 没有的语义色 | `theming.add_color('warning', …)` | 立即 |
+| 改别的 CSS 变量 | `theming.set_variables(spacing='0.22rem')` | 立即 |
 | 回到编译进样式表的默认主题 | `theming.reset()` | 立即 |
 
 所有函数都作用于**整个应用**（它们是全局状态），所以在页面里调用会连同其他已打开的页面一起
@@ -74,6 +75,19 @@ theming.use_base_color('zinc')
 `--radius` 也属于基础色（7 套在注册表里都是 `0.625rem`）。`use_base_color()` 会套用它，
 **但如果你调用过 `set_radius()`，你设定的值会被保留** —— 否则一个实时换色按钮会把用户调好的
 圆角打回去。
+:::
+
+:::{warning}
+**别被「看不出变化」骗了。** 本库编译进 `shadcn.css` 的默认主题**本来就是 `neutral`**，而七套
+基础色彼此只在彩度上差 0.019 以内（`neutral` 的 `--primary` 是 `oklch(0.205 0 0)`，`zinc` 是
+`oklch(0.21 0.006 285.885)`），七套的 `--radius` 又都是 `0.625rem`。所以：
+
+- `use_base_color('zinc')` 相对默认几乎看不出来，`use_base_color('neutral')` 则是彻底的空操作；
+- `use_base_color()` **永远不会**改变圆角；
+- `set_radius(0.75)` 只是把 10px 的基准改成 12px，在主按钮上体现为 8px → 9.6px。
+
+想要立竿见影的效果，用 `set_colors(primary='#2563eb')`、`set_radius(1.25)` 或
+`set_variables(spacing='0.5rem')`（见下一节）。
 :::
 
 ## 微调单个 token：`set_colors()`
@@ -162,6 +176,44 @@ shadcn.badge('Beta').classes('bg-warning text-warning-foreground')
 `set_colors()` —— 官方样式表里已经带全了这套矩阵，改值即可。
 :::
 
+## 别的 CSS 变量：`set_variables()`
+
+`set_colors()` / `set_dark_colors()` 管的是那 32 个色板 token，`set_radius()` 管 `--radius`。
+剩下的 CSS 自定义属性走 `set_variables()` / `set_dark_variables()`：名字去掉前导 `--`、下划线
+写成连字符，值必须是字符串。
+
+```python
+theming.set_variables(spacing='0.22rem',         # 每个 p-* / m-* / gap-* 都跟着缩放
+                      tracking_tight='-0.03em',  # 字号、行高、容器宽这些刻度同理
+                      brand='#0ea5e9')           # 或者你自己的变量
+theming.set_dark_variables(brand='#38bdf8')
+```
+
+自己定义的变量，自己用就完了：
+
+```python
+ui.element('div').style('color: var(--brand)')
+```
+
+:::{important}
+只有**编译产物真的用 `var()` 读**的自定义属性才能改变随库发布的工具类。Tailwind 的
+`@theme inline` 会把它自己主题变量的值**在构建期内联**进工具类，所以下面这些改了不会有任何
+效果：
+
+| 改了没用 | 原因 |
+| --- | --- |
+| `--font-sans` / `--font-mono` / `--font-serif` | `.font-sans` 等编译成写死的字体栈 |
+| `--shadow-md`、`--blur-*`、`--text-*--line-height` 之外的内联值 | 值被内联，不存在运行时引用 |
+| `--radius-sm` … `--radius-4xl` | 编译成 `calc(var(--radius) * N)`，阶梯变量本身不存在 |
+
+能生效的包括：32 个色板 token、`--radius`、`--spacing`、`--tracking-*`、`--leading-*`、
+`--text-*`、`--container-*`，以及**你自己的 CSS 读的那些变量**。
+
+上面那张表里的名字，`set_variables()` 会发一条 `UserWarning` 提醒你（每个名字只提醒一次），
+因为写进去完全没有痕迹 —— 和「主题失效了」一样难查。**你自己起的名字不会被告警**：
+`--brand` 这种由你自己的 CSS 读取的变量，正是这个 API 的用途。
+:::
+
 ## 实时切换
 
 `theming` 的注入策略分两个阶段：
@@ -196,10 +248,12 @@ for name in theming.BASE_COLORS:
 | `use_base_color(name)` | 套用一套官方基础色（7 选 1），保留 `add_color()` 加的颜色 |
 | `set_colors(**tokens)` | 覆盖浅色 token，关键字用下划线 |
 | `set_dark_colors(**tokens)` | 覆盖深色 token |
-| `set_radius(value)` | 设置 `--radius`，数字按 rem，也可传 CSS 长度 |
+| `set_radius(value)` | 设置 `--radius`，数字按 rem，也可传带单位的 CSS 长度 |
+| `set_variables(**variables)` | 覆盖任意 CSS 变量（浅色），名字用下划线 |
+| `set_dark_variables(**variables)` | 覆盖任意 CSS 变量（深色） |
 | `add_color(name, light, dark, *, foreground_light=None, foreground_dark=None)` | 定义新颜色并生成工具类 |
 | `reset()` | 丢弃全部覆盖，回到编译进样式表的默认主题 |
-| `current()` | 以普通 dict 返回当前主题（`radius` / `light` / `dark` / `colors`） |
+| `current()` | 以普通 dict 返回当前主题（`radius` / `light` / `dark` / `colors` / `variables` / `dark_variables`） |
 | `css()` | 返回当前会注入的样式表；什么都没设置时返回 `''` |
 | `BASE_COLORS` | 7 个基础色名字的元组 |
 | `COLOR_TOKENS` | 32 个 token 名字的元组 |
@@ -214,8 +268,11 @@ Path('my-theme.css').write_text(theming.css(), encoding='utf-8')
 
 ## 边界与注意
 
-- **值必须是 CSS 颜色字符串**。传数字会抛 `TypeError`；值里出现 `;`、`{`、`}`、`<`、`>`
-  也会被拒绝 —— 它们会被注入 `<style>` 元素，允许出现就等于允许注入任意 CSS。
+- **值必须是字符串**。`set_colors()` / `add_color()` 期待 CSS 颜色（传数字会抛 `TypeError`），
+  `set_variables()` 期待任意 CSS 值；值里出现 `;`、`{`、`}`、`<`、`>` 都会被拒绝 —— 它们会被
+  注入 `<style>` 元素，允许出现就等于允许注入任意 CSS。
+- **`set_radius()` 的字符串必须带单位**。`set_radius('0.75')` 会抛 `ValueError`：它会编译成
+  无效的 `--radius: 0.75;` 被浏览器静默丢掉。想要 0.75rem 就传数字 `0.75`，或者写 `'12px'`。
 - **`add_color()` 的名字必须是 kebab-case**，且不能撞上 32 个内置 token（会提示改用
   `set_colors()`）。
 - **Quasar 与 shadcn 是两套独立变量**。`theming` 只改 shadcn 那一套；`ui.notify`、
