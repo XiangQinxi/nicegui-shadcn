@@ -1,0 +1,295 @@
+/*!
+ * nicegui-shadcn — shadcn/ui design tokens and utility layer for NiceGUI.
+ *
+ * This stylesheet is compiled with the Tailwind CSS v4 CLI into
+ * `nicegui_shadcn/static/shadcn.css`, which is what actually ships.
+ *
+ * Design decisions:
+ *  - Tailwind's preflight is deliberately NOT imported. NiceGUI already loads
+ *    Quasar's own normalize (`quasar.unimportant.css`), and a second global
+ *    reset would fight it. Only `theme` + `utilities` are imported.
+ *  - Everything is emitted into NiceGUI's existing cascade layers
+ *    (`theme, base, quasar, nicegui, components, utilities, overrides,
+ *    quasar_importants`), so shadcn utilities win over Quasar defaults but
+ *    still lose to Quasar's explicit `!important` rules.
+ *  - The dark variant is bound to `body.body--dark`, which is exactly how
+ *    NiceGUI/Quasar express dark mode. This mirrors NiceGUI's own
+ *    `@custom-variant dark` in `templates/index.html`.
+ */
+
+/*
+ * `important` is not decoration. NiceGUI imports Quasar's colour helpers as
+ *
+ *     @import url("quasar.important.css") layer(quasar_importants);
+ *
+ * and that file contains things like
+ *
+ *     .bg-primary { background: var(--q-primary) !important; }
+ *
+ * `!important` beats any normal declaration no matter which layer it sits in,
+ * so without this flag `shadcn.button()` would come out Quasar blue instead of
+ * shadcn's near-black `--primary`. Layer precedence is *reversed* for
+ * important declarations, so `utilities` (declared before `quasar_importants`)
+ * wins once our declarations are important too.
+ */
+@import "tailwindcss/theme.css" layer(theme);
+/*
+ * `source(none)` disables Tailwind's automatic content detection, which would
+ * otherwise scan the whole checkout (README code samples, tests, examples) and
+ * make the compiled stylesheet depend on where the build was run from. With it
+ * off, the output is a pure function of the explicit `@source` globs below.
+ */
+@import "tailwindcss/utilities.css" layer(utilities) source(none) important;
+@import "tw-animate-css";
+
+/*
+ * Component templates and the Python layer that can attach classes.
+ *
+ * These paths are relative to THIS file, which lives in `frontend/` — the build
+ * inputs deliberately sit outside the importable package so that the wheel only
+ * contains runtime assets.
+ */
+@source "../nicegui_shadcn/elements/**/*.vue";
+@source "../nicegui_shadcn/elements/**/*.py";
+@source "../nicegui_shadcn/*.py";
+/* The bundled demo is a development artifact, but it is built against the same
+ * stylesheet that ships, so its layout classes have to be generated too. */
+@source "../examples/**/*.py";
+
+/* NiceGUI toggles dark mode by putting `body--dark` on <body>. */
+@custom-variant dark (&:where(body.body--dark, body.body--dark *));
+
+/* ------------------------------------------------------------------ *
+ * shadcn/ui design tokens — "neutral" base colour, the default theme.
+ * ------------------------------------------------------------------ */
+
+:root {
+  --radius: 0.625rem;
+
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.985 0 0);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+}
+
+/* Both hooks work: NiceGUI's own `body--dark` and shadcn's conventional `.dark`. */
+body.body--dark,
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --destructive-foreground: oklch(0.985 0 0);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji",
+    "Segoe UI Emoji";
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+
+  /* reka-ui exposes these on the element while an accordion/collapsible animates. */
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+}
+
+@keyframes accordion-down {
+  from { height: 0; }
+  to { height: var(--reka-accordion-content-height); }
+}
+
+@keyframes accordion-up {
+  from { height: var(--reka-accordion-content-height); }
+  to { height: 0; }
+}
+
+/* ------------------------------------------------------------------ *
+ * Base layer
+ * ------------------------------------------------------------------ */
+
+/*
+ * Deliberately narrow. Tailwind's `border-*` utilities only set
+ * `border-width`, so the colour has to come from somewhere; shadcn ships this
+ * rule inside its preflight, which we skipped. Setting only the colour (never
+ * the width) leaves every Quasar widget untouched.
+ */
+@layer base {
+  *,
+  ::before,
+  ::after {
+    border-color: var(--border);
+    outline-color: color-mix(in oklab, var(--ring) 50%, transparent);
+  }
+
+  /*
+   * Tailwind's preflight normally contributes this rule and we skipped
+   * preflight, but reka-ui relies on it: overlay primitives that stay mounted
+   * (``force-mount``) hide themselves with the ``hidden`` attribute. Without
+   * it, a `display: flex` utility would beat the user-agent `[hidden]` rule and
+   * every tab panel would be visible at once.
+   */
+  [hidden] {
+    display: none !important;
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * Pages that opt into the shadcn canvas get shadcn's body colours.
+ * ------------------------------------------------------------------ */
+
+.nicegui-shadcn-surface {
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+/* ------------------------------------------------------------------ *
+ * Force-generate the semantic utilities so that user code can attach
+ * shadcn colour classes at runtime (`element.classes('bg-primary')`)
+ * without recompiling this stylesheet.
+ * ------------------------------------------------------------------ */
+
+@source inline("{bg,text,border,ring,fill,stroke,divide,outline}-{background,foreground,card,card-foreground,popover,popover-foreground,primary,primary-foreground,secondary,secondary-foreground,muted,muted-foreground,accent,accent-foreground,destructive,destructive-foreground,border,input,ring,sidebar,sidebar-foreground,sidebar-primary,sidebar-accent,sidebar-border,sidebar-ring,chart-1,chart-2,chart-3,chart-4,chart-5}");
+@source inline("{hover,focus-visible,focus,active,disabled,group-hover,aria-expanded,data-[state=open]}:{bg,text,border,ring}-{background,foreground,card,card-foreground,popover,popover-foreground,primary,primary-foreground,secondary,secondary-foreground,muted,muted-foreground,accent,accent-foreground,destructive,border,input,ring}");
+@source inline("dark:{bg,text,border,ring,fill,stroke}-{background,foreground,card,card-foreground,popover,popover-foreground,primary,primary-foreground,secondary,secondary-foreground,muted,muted-foreground,accent,accent-foreground,destructive,destructive-foreground,border,input,ring,sidebar,sidebar-accent}");
+
+/* ------------------------------------------------------------------ *
+ * Runtime utility vocabulary.
+ *
+ * The stylesheet that ships is pre-compiled, so a class a user attaches at
+ * runtime (`shadcn.button('Save', classes='w-full mt-4')`) only works if it was
+ * generated here. Semantic colours are covered above; this block covers the
+ * layout / spacing / typography vocabulary that `classes=` is realistically
+ * used for, so the "no build step" promise holds for normal code.
+ *
+ * It is deliberately NOT the whole of Tailwind — everything here is paid for by
+ * every user of the package. Anything outside it needs a rebuild; see the
+ * README ("Extending the stylesheet").
+ * ------------------------------------------------------------------ */
+
+@source inline("{p,px,py,pt,pr,pb,pl,m,mx,my,mt,mr,mb,ml,gap,gap-x,gap-y}-{0,1,2,3,4,5,6,8,10,12,16}");
+@source inline("{w,h,size}-{0,1,2,3,4,5,6,8,10,12,16,20,24,32,40,48,56,64,auto,full,screen,fit,min,max}");
+@source inline("{min-w,max-w}-{0,full,screen,fit,min,max,xs,sm,md,lg,xl,2xl,3xl,4xl,5xl,6xl,7xl,prose,none}");
+@source inline("{min-h,max-h}-{0,full,screen,fit,min,max}");
+@source inline("text-{xs,sm,base,lg,xl,2xl,3xl,4xl}");
+@source inline("font-{thin,extralight,light,normal,medium,semibold,bold,extrabold,black,mono,sans,serif}");
+@source inline("leading-{none,tight,snug,normal,relaxed,loose,3,4,5,6,7,8,9,10}");
+@source inline("tracking-{tighter,tight,normal,wide,wider,widest}");
+@source inline("rounded{,-none,-sm,-md,-lg,-xl,-2xl,-3xl,-full}");
+@source inline("rounded-{t,r,b,l,tl,tr,br,bl}-{none,sm,md,lg,xl,2xl,3xl,full}");
+@source inline("border{,-0,-2,-4,-8}");
+@source inline("border-{solid,dashed,dotted,double,none}");
+@source inline("shadow{,-2xs,-xs,-sm,-md,-lg,-xl,-2xl,-none}");
+@source inline("ring{,-0,-1,-2,-4,-8}");
+@source inline("opacity-{0,10,20,25,30,40,50,60,70,75,80,90,95,100}");
+@source inline("{top,right,bottom,left,inset,inset-x,inset-y}-{0,1,2,3,4,5,6,8,10,12,16,auto,full}");
+@source inline("z-{0,10,20,30,40,50,auto}");
+@source inline("grid-cols-{1,2,3,4,5,6,7,8,9,10,11,12}");
+@source inline("{col,row}-span-{1,2,3,4,5,6,7,8,9,10,11,12,full}");
+@source inline("duration-{0,75,100,150,200,300,500,700,1000}");
+@source inline("{flex,grid,block,inline-block,inline,hidden,contents}");
+@source inline("flex-{row,col,row-reverse,col-reverse,wrap,wrap-reverse,nowrap,1,auto,initial,none}");
+@source inline("items-{start,end,center,baseline,stretch}");
+@source inline("justify-{start,end,center,between,around,evenly,stretch}");
+@source inline("self-{auto,start,end,center,stretch,baseline}");
+@source inline("overflow{,-x,-y}-{auto,hidden,clip,visible,scroll}");
+@source inline("cursor-{pointer,default,text,move,not-allowed,grab,grabbing}");
+@source inline("space-{x,y}-{0,1,2,3,4,5,6,8}");
+@source inline("transition{,-all,-colors,-opacity,-shadow,-transform}");

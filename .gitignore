@@ -1,0 +1,25 @@
+# NOTE: Poetry also honours this file when it builds the sdist, so anything
+# listed here is excluded from the source distribution.
+
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# virtualenvs (including the throwaway wheel-test one)
+/.venv*/
+venv/
+
+node_modules/
+
+# poetry build output
+dist/
+build/
+*.egg-info/
+
+# visual_check.mjs writes its screenshots here, and the demo can be dumped to HTML
+_shot-*.png
+_probe*
+/_*.py
+/_*.cjs
+/_*.mjs
+/_*.html

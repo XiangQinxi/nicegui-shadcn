@@ -1,0 +1,68 @@
+[project]
+name = "nicegui-shadcn"
+version = "0.1.0"
+description = "shadcn/ui components for NiceGUI — 51 components with a precompiled Tailwind v4 theme, no build step for the user"
+authors = [{ name = "XiangQinxi", email = "XiangQinxi@outlook.com" }]
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.10,<4.0"
+keywords = [
+    "nicegui",
+    "shadcn",
+    "shadcn-ui",
+    "tailwindcss",
+    "tailwind",
+    "vue",
+    "reka-ui",
+    "components",
+    "ui",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Software Development :: User Interfaces",
+]
+dependencies = ["nicegui>=3.0"]
+
+# Fill these in before publishing — PyPI shows them on the project page.
+# [project.urls]
+# Homepage = "https://github.com/<you>/nicegui-shadcn"
+# Repository = "https://github.com/<you>/nicegui-shadcn"
+# Issues = "https://github.com/<you>/nicegui-shadcn/issues"
+
+[tool.poetry]
+# Everything importable lives in this one package. The build inputs (the
+# Tailwind source and the esbuild entry for the reka-ui bundle) deliberately sit
+# outside it in `frontend/`, so nothing but runtime assets ends up in the wheel.
+packages = [{ include = "nicegui_shadcn" }]
+
+# `nicegui_shadcn/elements/*.vue` and `nicegui_shadcn/static/**` are runtime
+# assets, not Python: NiceGUI reads the `.vue` templates at import time and
+# serves the two prebuilt files over HTTP. Poetry only picks up `*.py` inside a
+# package by default, so both have to be listed explicitly or the published
+# wheel would be broken on `import nicegui_shadcn`.
+include = [
+    { path = "nicegui_shadcn/elements/*.vue", format = ["sdist", "wheel"] },
+    { path = "nicegui_shadcn/static/**/*", format = ["sdist", "wheel"] },
+    # The build inputs and the development artifacts only belong in the sdist:
+    # someone rebuilding the stylesheet from source needs `frontend/` *and* the
+    # npm manifest that pins the Tailwind CLI and esbuild, and the demo plus the
+    # test suite are how the package is verified.
+    { path = "frontend", format = ["sdist"] },
+    { path = "examples", format = ["sdist"] },
+    { path = "tests", format = ["sdist"] },
+    { path = "package.json", format = ["sdist"] },
+    { path = "package-lock.json", format = ["sdist"] },
+    { path = "AGENT.md", format = ["sdist"] },
+]
+
+[build-system]
+requires = ["poetry-core>=2.0"]
+build-backend = "poetry.core.masonry.api"

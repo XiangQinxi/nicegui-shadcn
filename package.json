@@ -1,0 +1,32 @@
+{
+  "name": "nicegui-shadcn-build",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Build toolchain for the nicegui-shadcn runtime assets: the Tailwind v4 stylesheet and the reka-ui bundle. Only needed to rebuild them; installing the Python package does not require npm.",
+  "keywords": [
+    "nicegui",
+    "shadcn",
+    "tailwindcss",
+    "reka-ui"
+  ],
+  "type": "commonjs",
+  "scripts": {
+    "build": "npm run build:css && npm run build:vendor",
+    "build:css": "tailwindcss -i ./frontend/tailwind.css -o ./nicegui_shadcn/static/shadcn.css",
+    "build:vendor": "esbuild frontend/vendor/reka-entry.js --bundle --format=esm --target=es2020 --external:vue --minify --legal-comments=none --outfile=nicegui_shadcn/static/vendor/reka-ui.js",
+    "test": "node tests/visual_check.mjs"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.3.3",
+    "esbuild": "^0.28.2",
+    "playwright-core": "^1.63.0",
+    "tailwindcss": "^4.3.3"
+  },
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "lucide-vue-next": "^0.577.0",
+    "reka-ui": "^2.10.5",
+    "tailwind-merge": "^3.7.0",
+    "tw-animate-css": "^1.4.0"
+  }
+}

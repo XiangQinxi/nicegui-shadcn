@@ -1,0 +1,458 @@
+# nicegui-shadcn
+
+[shadcn/ui](https://ui.shadcn.com) components for [NiceGUI](https://nicegui.io), built on
+NiceGUI's documented
+[“Using other Vue UI frameworks”](https://nicegui.io/documentation/section_styling_appearance#using_other_vue_ui_frameworks)
+extension mechanism. No build step is required to *use* it: the stylesheet and the
+`reka-ui` bundle ship pre-compiled inside the package.
+
+```python
+from nicegui import ui
+from nicegui_shadcn import shadcn
+
+with shadcn.card():
+    with shadcn.card_header():
+        shadcn.card_title('Create project')
+        shadcn.card_description('Deploy your new project in one click.')
+    with shadcn.card_content():
+        shadcn.input(placeholder='Name')
+        shadcn.button('Deploy', on_click=lambda: ui.notify('Deployed'))
+
+ui.run()
+```
+
+![the demo app](docs/demo-light.png)
+
+<sub>Light and dark are both driven by `body.body--dark`, i.e. by `ui.dark_mode()`.</sub>
+
+![the demo app in dark mode](docs/demo-dark.png)
+
+`python examples/demo.py` renders every component; it is what the screenshots above and
+`tests/visual_check.mjs` use.
+
+## Contents
+
+- [Install](#install)
+- [How it works](#how-it-works)
+- [Usage](#usage)
+  - [The `classes=` keyword](#the-classes-keyword)
+  - [Layout](#layout)
+  - [Forms](#forms)
+  - [Display](#display)
+  - [Disclosure](#disclosure)
+  - [Overlays](#overlays)
+  - [Icons](#icons)
+- [Dark mode](#dark-mode)
+- [Keyword arguments from NiceGUI](#keyword-arguments-from-nicegui)
+- [Component reference](#component-reference)
+- [Development](#development)
+- [Extending the stylesheet](#extending-the-stylesheet)
+- [Packaging and publishing](#packaging-and-publishing)
+- [Design notes and limitations](#design-notes-and-limitations)
+
+## Install
+
+```bash
+pip install nicegui-shadcn        # from PyPI (pulls in nicegui>=3.0)
+pip install -e .                  # or, from a checkout of this repository
+```
+
+Importing `nicegui_shadcn` registers everything that has to be on the page before the
+first component renders:
+
+- the stylesheet is served at `/_nicegui_shadcn/shadcn.css` and linked from the page head;
+- the `reka-ui` ESM bundle is served from the same prefix and installed on the import map
+  as the bare specifier `reka-ui`;
+- NiceGUI's own Vue 3 build stays the single Vue instance (the bundle keeps `vue`
+  external), so `provide`/`inject` and `Teleport` keep working across every component.
+
+Nothing else is registered globally — no Tailwind runtime, no CDN imports.
+
+## How it works
+
+| Piece | What it does |
+| --- | --- |
+| `nicegui_shadcn/theme.py` | Serves `static/` and adds the `<link>`. Runs on import. |
+| `frontend/tailwind.css` | Tailwind v4 source: shadcn design tokens, `@theme inline` exposure, `dark` variant bound to `body.body--dark`. Build input, not shipped in the wheel. |
+| `nicegui_shadcn/static/shadcn.css` | The compiled stylesheet (~191 kB). |
+| `nicegui_shadcn/static/vendor/reka-ui.js` | The `reka-ui` primitives the library wraps, tree-shaken to ~283 kB. |
+| `frontend/vendor/reka-entry.js` | The esbuild entry that produces the bundle above. Build input. |
+| `nicegui_shadcn/_tw_merge.py` | A dependency-free port of `tailwind-merge`, i.e. the `cn()` helper. |
+| `nicegui_shadcn/elements/*.py` | One class per component: `ShadcnElement` plus NiceGUI's `ValueElement`/`TextElement` mixins. |
+| `nicegui_shadcn/elements/*.vue` | Templates for the components that need real behaviour. Parsed by NiceGUI's own `VBuild`, executed as ES modules. |
+
+The Python classes decide the classes, the `.vue` files decide the markup. Every class
+string lives in Python so that `classes=` can be merged correctly, and
+`tests/audit_classes.py` can verify that each one really exists in the compiled CSS.
+
+## Usage
+
+### The `classes=` keyword
+
+Exactly like shadcn's `cn()`: your classes are merged with the component's own through
+`tailwind-merge`, and **yours win**.
+
+```python
+shadcn.button('Save')                            # bg-primary text-primary-foreground …
+shadcn.button('Save', classes='bg-destructive')  # the red wins, not both
+shadcn.button('Save', classes=['w-full', 'mt-4'])
+```
+
+NiceGUI's own `.classes(...)` is unchanged and still appends:
+
+```python
+btn = shadcn.button('Save')
+btn.classes('mt-4')          # appended, no conflict resolution
+btn.classes(replace='mt-8')  # NiceGUI's replace still works
+```
+
+The stylesheet is pre-compiled, so `classes=` only affects classes that were generated
+at build time. The set you can rely on is:
+
+- every class the components themselves use;
+- the shadcn semantic colours, plain and with the common variants — `bg-primary`,
+  `text-muted-foreground`, `dark:border-input`, `hover:bg-accent`, `data-[state=open]:bg-accent`, …;
+- a curated layout / spacing / typography vocabulary — `w-full`, `mt-4`, `px-8`, `gap-3`,
+  `text-center`, `rounded-full`, `shadow-lg`, `grid-cols-3`, …
+
+Anything outside that — an arbitrary Tailwind utility, or a raw palette colour such as
+`bg-blue-600` — has to be generated by a rebuild:
+[Extending the stylesheet](#extending-the-stylesheet).
+
+### Layout
+
+```python
+with shadcn.card():
+    with shadcn.card_header():
+        shadcn.card_title('Title')
+        shadcn.card_description('Description')
+    with shadcn.card_content():
+        ...
+    with shadcn.card_footer():
+        shadcn.button('Cancel', variant='outline')
+        shadcn.button('Save')
+
+shadcn.separator()
+shadcn.separator(orientation='vertical')
+shadcn.skeleton(width='8rem', height='1rem')
+```
+
+Tables are the usual shadcn family:
+
+```python
+with shadcn.table_container():
+    with shadcn.table():
+        with shadcn.table_header():
+            with shadcn.table_row():
+                shadcn.table_head('Invoice')
+                shadcn.table_head('Status')
+        with shadcn.table_body():
+            with shadcn.table_row():
+                shadcn.table_cell('INV-001')
+                shadcn.table_cell('Paid')
+```
+
+### Forms
+
+Every form control is a NiceGUI `ValueElement`, so `bind_value`, `on_value_change` and
+`ui.bind` all work.
+
+```python
+name = shadcn.input(placeholder='Project name')
+shadcn.textarea(placeholder='Description', rows=4)
+shadcn.checkbox('Accept terms', value=True)
+shadcn.switch('Notifications')
+shadcn.label('Project name', for_=name)
+
+shadcn.select({'system': 'System', 'light': 'Light', 'dark': 'Dark'}, value='system')
+shadcn.radio_group([('card', 'Card'), ('paypal', 'PayPal')], value='card')
+shadcn.slider(40, min=0, max=100, step=5)
+shadcn.toggle('Bold', value=True)
+shadcn.toggle_group(['left', 'center', 'right'], value='center', multiple=False)
+```
+
+`bind_value` between a shadcn control and a normal NiceGUI element is the point of the
+whole exercise:
+
+```python
+@dataclass
+class Form:
+    name: str = ''
+
+form = Form()
+shadcn.input().bind_value(form, 'name')
+ui.label().bind_text_from(form, 'name')
+```
+
+### Display
+
+```python
+shadcn.badge('Default')
+shadcn.badge('Secondary', variant='secondary')
+shadcn.badge('Overdue', variant='destructive')
+
+shadcn.avatar(src='/photo.png', fallback='CN')
+shadcn.alert(title='Heads up!', description='You can add components using the CLI.')
+shadcn.alert(title='Error', description='Your session has expired.', variant='destructive')
+
+progress = shadcn.progress(60)
+progress.set_value(80)
+```
+
+### Disclosure
+
+Tabs take their labels as data, because reka-ui's roving-focus context does not survive
+being routed through a NiceGUI slot; the tab *panels* are ordinary NiceGUI children.
+
+```python
+with shadcn.tabs(value='account'):
+    shadcn.tabs_list([('account', 'Account'),
+                      ('password', 'Password'),
+                      {'value': 'disabled', 'label': 'Disabled', 'disabled': True}])
+    with shadcn.tabs_content(value='account'):
+        shadcn.input(value='Ada Lovelace')
+    with shadcn.tabs_content(value='password'):
+        shadcn.input(placeholder='Current password', type='password')
+
+with shadcn.accordion(value='shipping'):
+    with shadcn.accordion_item(value='shipping'):
+        shadcn.accordion_trigger('How do you ship?')
+        with shadcn.accordion_content():
+            ui.label('By carrier pigeon.')
+    with shadcn.accordion_item(value='returns'):
+        shadcn.accordion_trigger('What is your return policy?')
+        with shadcn.accordion_content():
+            ui.label('30 days.')
+```
+
+### Overlays
+
+```python
+with shadcn.dialog() as dialog:
+    shadcn.dialog_trigger('Edit profile')          # renders as an outline button
+    with shadcn.dialog_content(title='Edit profile',
+                               description='Changes are saved locally.'):
+        shadcn.input(value='Ada Lovelace')
+        with shadcn.dialog_footer():
+            shadcn.button('Cancel', variant='outline', on_click=dialog.close)
+            shadcn.button('Save', on_click=lambda: (ui.notify('Saved'), dialog.close()))
+
+dialog.open()      # also close() and toggle()
+
+with shadcn.popover():
+    shadcn.popover_trigger('Open popover', variant='outline')
+    with shadcn.popover_content():
+        ui.label('Anything NiceGUI can render.')
+
+shadcn.dropdown_menu([
+    {'kind': 'label', 'label': 'My account'},
+    {'value': 'profile', 'label': 'Profile'},
+    {'kind': 'separator'},
+    {'value': 'logout', 'label': 'Log out', 'variant': 'destructive'},
+], on_select=lambda e: ui.notify(str(e.args)))
+
+with shadcn.tooltip('Add to library', side='top'):
+    shadcn.button('Hover me', variant='outline')
+```
+
+`DialogContent(side=...)` also accepts `'right'`, `'left'`, `'top'` and `'bottom'` for
+sheet-style panels.
+
+### Icons
+
+The library inlines the handful of [Lucide](https://lucide.dev) glyphs it needs, so no
+icon bundle is shipped. `icons.ICON_NAMES` lists them, and `icons.svg()` gives you the
+markup for your own use:
+
+```python
+from nicegui_shadcn import icons
+
+shadcn.button('Delete', icon='trash-2', variant='destructive')
+ui.html(icons.svg('github', size=24), sanitize=False)
+shadcn.button('Icon only', icon='settings', size='icon')   # label becomes sr-only
+```
+
+## Dark mode
+
+The Tailwind `dark:` variant is bound to `body.body--dark` — the class NiceGUI's own
+`ui.dark_mode()` toggles — and the shadcn tokens are redefined under `.dark`. So the usual
+NiceGUI switch is all you need:
+
+```python
+ui.dark_mode().bind_value(...)   # or ui.dark_mode(True)
+```
+
+## Keyword arguments from NiceGUI
+
+Every component is a real `nicegui.element.Element`, so the standard toolbox works
+unchanged: `.bind_value()`, `.on()`, `.tooltip()`, `.classes()`, `.style()`, `.props()`,
+`.move()`, `.set_enabled()`, `.visible`, `.add_slot()`, and `ui.context`.
+
+## Component reference
+
+| Group | Factory | Highlights |
+| --- | --- | --- |
+| Buttons | `button` | `variant` ∈ default/destructive/outline/secondary/ghost/link, `size` ∈ default/sm/lg/icon, `icon`, `icon_position`, `loading`, `disabled` |
+| Forms | `input`, `textarea` | `placeholder`, `type`, `disabled`, `readonly`, `autocomplete`, `rows`, `on_change` |
+| | `checkbox`, `switch` | `value: bool`, `disabled`, `on_change` |
+| | `label` | `for_` takes an element or an id |
+| | `select` | `options`, `value`, `placeholder`, `disabled` |
+| | `radio_group` | `options`, `value`, `orientation`, `disabled` |
+| | `slider` | `min`, `max`, `step`, `orientation`, `disabled` |
+| | `toggle`, `toggle_group` | `value`, `multiple`, `orientation`, `disabled` |
+| Display | `badge` | `variant` ∈ default/secondary/destructive/outline |
+| | `avatar` | `src`, `fallback`, `size` ∈ default/sm/lg/xl |
+| | `alert` | `title`, `description`, `variant` ∈ default/destructive, `icon` |
+| | `progress` | `value` (clamped 0–100), `set_value()` |
+| | `table`, `table_container`, `table_header`, `table_body`, `table_footer`, `table_row`, `table_head`, `table_cell`, `table_caption` | |
+| Layout | `card`, `card_header`, `card_title`, `card_description`, `card_content`, `card_footer` | |
+| | `separator` | `orientation`, `decorative` |
+| | `skeleton` | `width`, `height` |
+| Disclosure | `tabs`, `tabs_list`, `tabs_content` | `value`, `orientation` |
+| | `accordion`, `accordion_item`, `accordion_trigger`, `accordion_content` | `value`, `multiple` |
+| Overlays | `dialog`, `dialog_trigger`, `dialog_content`, `dialog_footer` | `open()`/`close()`/`toggle()`, `side`, `closable` |
+| | `popover`, `popover_trigger`, `popover_content` | `side`, `align` |
+| | `dropdown_menu` | `items`, `align`, `on_select` |
+| | `tooltip` | `text`, `side`, `delay` |
+| Icons | `icon` | `icon('check', size=16)` |
+
+`options` and `items` accept all of these spellings, everywhere:
+
+```python
+shadcn.select(['system', 'light', 'dark'])                     # value == label
+shadcn.select({'system': 'System', 'light': 'Light'})          # value -> label
+shadcn.select([('system', 'System'), ('light', 'Light')])      # (value, label) pairs
+shadcn.select([{'value': 'system', 'label': 'System', 'disabled': False}])
+```
+
+## Development
+
+```bash
+npm install
+npx @tailwindcss/cli -i ./frontend/tailwind.css -o ./nicegui_shadcn/static/shadcn.css
+npx esbuild frontend/vendor/reka-entry.js --bundle --format=esm --target=es2020 \
+    --external:vue --minify --legal-comments=none --outfile=nicegui_shadcn/static/vendor/reka-ui.js
+```
+
+Rebuild the CSS after touching any `.py` or `.vue` file: Tailwind only emits the utilities
+it can see, and it scans both file types (`@source` globs in `frontend/tailwind.css`).
+Automatic content detection is switched off with `source(none)`, so the compiled output is
+a function of those globs alone and does not change with whatever else is in the checkout.
+
+Tests:
+
+```bash
+python tests/test_tw_merge.py        # tailwind-merge semantics (37 cases)
+python tests/test_render.py          # every component renders without a client
+python tests/audit_classes.py        # every class used in Python exists in the CSS
+python examples/demo.py              # then, in another shell:
+node tests/visual_check.mjs http://127.0.0.1:8123/
+```
+
+`visual_check.mjs` drives the demo in headless Edge and asserts the things that a Python
+test cannot see: computed colours resolve to the shadcn tokens, the `.vue` components
+actually mounted, the reka-ui primitives render (tabs, accordion, slider, radio, toggles),
+the overlays portal/focus/dismiss correctly, light and dark agree, and nothing overflows.
+
+If you are changing the library itself — rather than using it — read
+[`AGENT.md`](AGENT.md): it documents the NiceGUI extension contract, the constraints of
+NiceGUI's home-grown `.vue` parser, the Tailwind cascade-layer rules, and the mistakes that
+have already been made here once.
+
+## Extending the stylesheet
+
+`classes=` and `element.classes(...)` can only apply classes that exist in the compiled
+stylesheet. To use your own, point a copy of the Tailwind source at your application and
+rebuild:
+
+```bash
+npm install -D tailwindcss @tailwindcss/cli
+# frontend/ ships in the sdist; if you installed the wheel, take it from the repository
+printf '@source "../myapp/**/*.py";\n' >> frontend/tailwind.css
+npx @tailwindcss/cli -i ./frontend/tailwind.css -o ./myapp/static/shadcn.css
+```
+
+`@source` takes globs, and `@source inline("bg-blue-600")` forces a class that only ever
+appears at runtime inside a string. Then link the result from your page:
+
+```python
+from nicegui import ui
+from nicegui_shadcn import shadcn  # still needed: registers the components
+
+ui.add_head_html('<link rel="stylesheet" href="/static/shadcn.css">', shared=True)
+```
+
+Everything the library needs is namespaced by the cascade layers it declares, so an
+extended rebuild and the bundled stylesheet are interchangeable.
+
+## Packaging and publishing
+
+This is a [Poetry](https://python-poetry.org) project, so publishing is two commands:
+
+```bash
+poetry check            # metadata is valid
+poetry publish --build  # builds the wheel + sdist and uploads them to PyPI
+```
+
+`poetry publish` needs credentials once, either in Poetry's config or in the environment
+variable it also reads (handy for CI, where nothing is written to disk):
+
+```bash
+poetry config pypi-token.pypi pypi-AgEIcHlwaS5vcmc...
+export POETRY_PYPI_TOKEN_PYPI=pypi-AgEIcHlwaS5vcmc...
+```
+
+Send a release candidate to TestPyPI first. Poetry has no built-in `testpypi` repository,
+so define it once:
+
+```bash
+poetry config repositories.testpypi https://test.pypi.org/legacy/
+poetry config pypi-token.testpypi pypi-AgEIcHlwaS5vcmc...
+poetry publish --repository testpypi --build
+```
+
+`poetry publish --dry-run` resolves the target repository and both artifacts without
+uploading anything, which is a cheap way to check the metadata and the `dist/` contents.
+
+Either way, `poetry publish` with no arguments and an already-built `dist/` is enough —
+it uploads what is there instead of rebuilding, so `poetry build && poetry publish` and
+`poetry publish --build` are the same release.
+
+What goes where:
+
+| Artifact | Contents |
+| --- | --- |
+| wheel | `nicegui_shadcn/` only — the Python modules, the 24 `.vue` templates and `static/` with the two prebuilt assets. |
+| sdist | the same, plus `frontend/` (Tailwind source and esbuild entry), `package.json` + `package-lock.json` (which pin the two build tools), `examples/`, `tests/` and `AGENT.md`, so the assets can be rebuilt from source. |
+
+The build inputs deliberately live outside the package in `frontend/`, so the wheel stays
+runtime-only and importing `nicegui_shadcn` never reads a build-time file.
+
+## Design notes and limitations
+
+- **`.vue` files use the Options API.** NiceGUI's `VBuild` is an HTML parser, not a Vue
+  SFC compiler: `<script setup>` is not compiled, and a nested `<template>` truncates the
+  template. Templates here are built with `v-for` on a real element and
+  `<component :is>` instead.
+- **No Tailwind preflight.** Quasar already normalises, and a second reset would fight it.
+  The one preflight rule the library needs (`[hidden] { display: none }`, used by
+  mounted-but-closed panels) is added by hand.
+- **shadcn's own CSS variables, not Quasar's.** Both define `--primary`; the shadcn
+  utilities win because they are emitted into `layer(utilities) important`, which beats
+  `quasar_importants`. Quasar widgets keep their own colours.
+- **Tabs are data-driven.** reka-ui's `TabsList` provides the roving-focus context that
+  `TabsTrigger` injects, and that injection does not survive a NiceGUI slot, so the
+  triggers are generated inside the list component. The trade-off is that a tab cannot
+  contain arbitrary NiceGUI children; it takes a label.
+- **Mounted-but-closed panels.** `TabsContent` and `AccordionContent` stay in the DOM so
+  that server-side updates always find their elements; `data-[state=inactive]:hidden` and
+  `data-[state=closed]:hidden` do the hiding. The consequence is that the accordion has no
+  *closing* animation.
+- **Icons are inlined**, not bundled from `lucide-vue-next`; the package ships 39 glyphs.
+- **The stylesheet is pre-compiled, so `classes=` is bounded.** Semantic colours and a
+  curated layout vocabulary are force-generated with `@source inline(...)`; everything else
+  needs a rebuild ([Extending the stylesheet](#extending-the-stylesheet)). The alternative —
+  generating all of Tailwind, or shipping a runtime JIT — would either multiply the download
+  or reintroduce a reset that fights Quasar.
+- **The README screenshots use relative paths**, which work on a repository host but not on
+  PyPI; switch them to absolute raw URLs once the project has a home.
