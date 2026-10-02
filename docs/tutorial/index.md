@@ -11,10 +11,12 @@ installation
 how-it-works
 usage
 layout
+typography
 forms
 display
 disclosure
 overlays
+menus
 icons
 dark-mode
 theming

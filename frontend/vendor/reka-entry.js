@@ -91,6 +91,15 @@ export {
   HoverCardTrigger,
   HoverCardPortal,
   HoverCardContent,
+  DrawerRoot,
+  DrawerTrigger,
+  DrawerPortal,
+  DrawerOverlay,
+  DrawerContent,
+  DrawerClose,
+  DrawerTitle,
+  DrawerDescription,
+  DrawerHandle,
   // -- menus --------------------------------------------------------------
   DropdownMenuRoot,
   DropdownMenuTrigger,
@@ -106,6 +115,42 @@ export {
   DropdownMenuSub,
   DropdownMenuSubTrigger,
   DropdownMenuSubContent,
+  ContextMenuRoot,
+  ContextMenuTrigger,
+  ContextMenuPortal,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuLabel,
+  ContextMenuSeparator,
+  MenubarRoot,
+  MenubarMenu,
+  MenubarTrigger,
+  MenubarPortal,
+  MenubarContent,
+  MenubarItem,
+  MenubarSeparator,
+  MenubarLabel,
+  NavigationMenuRoot,
+  NavigationMenuList,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuTrigger,
+  NavigationMenuContent,
+  NavigationMenuViewport,
+  NavigationMenuIndicator,
+  // -- calendar -----------------------------------------------------------
+  CalendarRoot,
+  CalendarHeader,
+  CalendarHeading,
+  CalendarPrev,
+  CalendarNext,
+  CalendarGrid,
+  CalendarGridHead,
+  CalendarGridRow,
+  CalendarGridBody,
+  CalendarHeadCell,
+  CalendarCell,
+  CalendarCellTrigger,
   // -- misc primitives ----------------------------------------------------
   Toggle,
   ToggleGroupRoot,
@@ -133,3 +178,19 @@ export {
   ToastClose,
   ToastViewport,
 } from 'reka-ui';
+
+/**
+ * `@internationalized/date` rides along in this same chunk on purpose.
+ *
+ * reka-ui's calendar components import it with a bare specifier
+ * (`import { isSameDay } from "@internationalized/date"`), which esbuild leaves
+ * alone because the package is external to reka-ui's own build. Bundling it
+ * here guarantees the page ends up with exactly one copy, so a `CalendarDate`
+ * built by our Python-facing code still satisfies reka's internal `instanceof`
+ * checks. reka-ui itself does not re-export any of these.
+ *
+ * Our `.vue` files cannot import the package directly: NiceGUI's VBuild ships a
+ * component's `<script>` block as a raw ES module, so the only importable
+ * specifiers are the ones on the page's import map (`vue` and `reka-ui`).
+ */
+export { CalendarDate, parseDate, today, getLocalTimeZone } from '@internationalized/date';

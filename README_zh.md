@@ -41,6 +41,7 @@ ui.run()
   - [展示](#展示)
   - [折叠](#折叠)
   - [浮层](#浮层)
+  - [菜单、命令与反馈](#菜单命令与反馈)
   - [图标](#图标)
 - [深色模式](#深色模式)
 - [主题](#主题)
@@ -74,8 +75,8 @@ pip install -e .                  # or, from a checkout of this repository
 | --- | --- |
 | `nicegui_shadcn/theme.py` | 提供 `static/` 并注入 `<link>`。导入时即运行。 |
 | `frontend/tailwind.css` | Tailwind v4 源码：shadcn 设计 token、`@theme inline` 暴露、绑定到 `body.body--dark` 的 `dark` 变体。属于构建输入，不随 wheel 发布。 |
-| `nicegui_shadcn/static/shadcn.css` | 编译后的样式表（约 191 kB）。 |
-| `nicegui_shadcn/static/vendor/reka-ui.js` | 本库所封装的那些 `reka-ui` 原语，经过 tree-shaking 后约 283 kB。 |
+| `nicegui_shadcn/static/shadcn.css` | 编译后的样式表（约 201 kB）。 |
+| `nicegui_shadcn/static/vendor/reka-ui.js` | 本库所封装的那些 `reka-ui` 原语，经过 tree-shaking 后约 381 kB。 |
 | `frontend/vendor/reka-entry.js` | 生成上面这个 bundle 的 esbuild 入口。属于构建输入。 |
 | `nicegui_shadcn/_tw_merge.py` | `tailwind-merge` 的一个零依赖移植版，也就是 `cn()` 辅助函数。 |
 | `nicegui_shadcn/elements/*.py` | 每个组件一个类：`ShadcnElement` 加上 NiceGUI 的 `ValueElement`/`TextElement` mixin。 |
@@ -189,6 +190,17 @@ shadcn.toggle('Bold', value=True)
 shadcn.toggle_group(['left', 'center', 'right'], value='center', multiple=False)
 ```
 
+选择器、一次性密码输入框和组合框同样是表单控件：
+
+```python
+shadcn.native_select({'system': 'System', 'light': 'Light'}, value='system')
+shadcn.combobox({'next': 'Next.js', 'svelte': 'SvelteKit'}, value='next')
+shadcn.input_otp(length=6, groups=[3, 3])              # masked, pattern and inputmode too
+
+shadcn.calendar(value='2026-03-15', week_starts_on=1)  # ISO date in, ISO date out
+shadcn.date_picker(value='2026-03-15', min_value='2026-03-01')
+```
+
 在 shadcn 控件与普通 NiceGUI 元素之间使用 `bind_value`，正是整件事的意义所在：
 
 ```python
@@ -214,6 +226,43 @@ shadcn.alert(title='Error', description='Your session has expired.', variant='de
 
 progress = shadcn.progress(60)
 progress.set_value(80)
+```
+
+展示类的其余成员 —— item 行、空状态、面包屑与排版：
+
+```python
+with shadcn.item():
+    with shadcn.item_media(variant='icon'):
+        shadcn.icon('check', size=16)
+    with shadcn.item_content():
+        shadcn.item_title('Deployment ready')
+        shadcn.item_description('Your project is live.')
+    with shadcn.item_actions():
+        shadcn.badge('New')
+
+with shadcn.empty():
+    with shadcn.empty_header():
+        with shadcn.empty_media(variant='icon'):
+            shadcn.icon('info')
+        shadcn.empty_title('No results')
+        shadcn.empty_description('Try a different search.')
+
+shadcn.spinner(size=20)
+shadcn.kbd('Ctrl')
+shadcn.marker('New', variant='success')
+shadcn.aspect_ratio(16 / 9)
+shadcn.pagination(page=2, total=5)
+
+shadcn.h1('Installation')
+shadcn.paragraph('Then restart the server.')
+
+with shadcn.breadcrumb():
+    with shadcn.breadcrumb_list():
+        with shadcn.breadcrumb_item():
+            shadcn.breadcrumb_link('Home')
+        shadcn.breadcrumb_separator()
+        with shadcn.breadcrumb_item():
+            shadcn.breadcrumb_page('Components')
 ```
 
 ### 折叠
@@ -278,6 +327,56 @@ with shadcn.tooltip('Add to library', side='top'):
 `DialogContent(side=...)` 还接受 `'right'`、`'left'`、`'top'` 和 `'bottom'`，用来做 sheet 风格
 的面板。
 
+### 菜单、命令与反馈
+
+浮层家族剩下的成员 —— 菜单栏、右键菜单、悬停卡片、导航菜单、命令面板与 toast：
+
+```python
+with shadcn.alert_dialog() as confirm:
+    shadcn.alert_dialog_trigger('Delete project')
+    with shadcn.alert_dialog_content(title='Are you absolutely sure?',
+                                     description='This action cannot be undone.'):
+        with shadcn.alert_dialog_footer():
+            shadcn.alert_dialog_cancel('Cancel')
+            shadcn.alert_dialog_action('Continue').on('click', confirm.close)
+
+with shadcn.sheet():
+    shadcn.sheet_trigger('Open sheet')
+    with shadcn.sheet_content(title='Edit profile', side='right'):
+        shadcn.input(value='Ada Lovelace')
+
+with shadcn.hover_card():
+    shadcn.hover_card_trigger().classes('underline')
+    with shadcn.hover_card_content():
+        shadcn.muted('@ada - joined March 2020')
+
+shadcn.menubar({'File': [{'value': 'new', 'label': 'New'},
+                         {'kind': 'separator'},
+                         {'value': 'quit', 'label': 'Quit'}],
+                'Edit': [{'value': 'undo', 'label': 'Undo'}]},
+               on_select=lambda e: ui.notify(str(e.args)))
+
+shadcn.navigation_menu([
+    {'label': 'Home', 'href': '/'},
+    {'label': 'Products', 'items': [{'label': 'Analytics', 'href': '/analytics'}]},
+])
+
+with shadcn.context_menu():
+    shadcn.context_menu_trigger('Right-click me')
+    shadcn.context_menu_content([{'value': 'copy', 'label': 'Copy'}],
+                                on_select=lambda e: ui.notify(str(e.args)))
+
+shadcn.command([{'value': 'calendar', 'label': 'Calendar', 'group': 'Suggestions'},
+                {'kind': 'separator'},
+                {'value': 'logout', 'label': 'Log out', 'group': 'Settings'}],
+               on_select=lambda e: ui.notify(str(e.args)))
+
+with shadcn.toast_provider():
+    saved = shadcn.toast('Saved', description='Your changes are live.')
+
+saved.open()      # or let the provider's duration close it
+```
+
 ### 图标
 
 本库把它需要的那几个 [Lucide](https://lucide.dev) 图标直接内联，因此不随包发布任何图标
@@ -335,27 +434,55 @@ token 表、圆角阶梯与各种注意事项见文档里的 [主题](docs/tutor
 | 分组 | 工厂函数 | 要点 |
 | --- | --- | --- |
 | Buttons | `button` | `variant` ∈ default/destructive/outline/secondary/ghost/link，`size` ∈ default/sm/lg/icon，`icon`，`icon_position`，`loading`，`disabled` |
+| | `button_group`、`button_group_text`、`button_group_separator` | `vertical: bool` |
 | Forms | `input`、`textarea` | `placeholder`，`type`，`disabled`，`readonly`，`autocomplete`，`rows`，`on_change` |
 | | `checkbox`、`switch` | `value: bool`，`disabled`，`on_change` |
 | | `label` | `for_` 可以接受一个元素或一个 id |
 | | `select` | `options`，`value`，`placeholder`，`disabled` |
+| | `native_select` | 原生 HTML `<select>`：`options`，`value`，`disabled` |
+| | `combobox` | `options`，`value`，`placeholder`，`search_placeholder`，`filter`，`on_select` |
 | | `radio_group` | `options`，`value`，`orientation`，`disabled` |
 | | `slider` | `min`，`max`，`step`，`orientation`，`disabled` |
 | | `toggle`、`toggle_group` | `value`，`multiple`，`orientation`，`disabled` |
+| | `input_otp` | `length`，`groups`，`masked`，`pattern`，`inputmode`，`disabled` |
+| | `calendar` | `value`（ISO 字符串或 `date`），`min_value`，`max_value`，`week_starts_on`，`number_of_months`，`fixed_weeks`，`disabled`，`readonly` |
+| | `date_picker` | `popover` + `calendar` 的组合：`value`，`min_value`，`max_value`，`format_date`，`on_date_change` |
 | Display | `badge` | `variant` ∈ default/secondary/destructive/outline |
 | | `avatar` | `src`，`fallback`，`size` ∈ default/sm/lg/xl |
-| | `alert` | `title`，`description`，`variant` ∈ default/destructive，`icon` |
+| | `alert`、`alert_title`、`alert_description` | `title`，`description`，`variant` ∈ default/destructive，`icon` |
 | | `progress` | `value`（钳制在 0–100），`set_value()` |
+| | `spinner` | `size`，`label`（无障碍名称） |
+| | `kbd`、`marker` | `marker` 的 `variant` ∈ default/success/warning/error/info |
+| | `aspect_ratio` | `ratio` |
+| | `empty`、`empty_header`、`empty_media`、`empty_title`、`empty_description`、`empty_content` | `empty_media(variant=...)` ∈ default/icon |
+| | `item`、`item_group`、`item_header`、`item_media`、`item_title`、`item_description`、`item_content`、`item_actions`、`item_footer`、`item_separator` | `item(variant=...)` ∈ default/outline/muted，`size` ∈ default/sm |
 | | `table`、`table_container`、`table_header`、`table_body`、`table_footer`、`table_row`、`table_head`、`table_cell`、`table_caption` | |
+| Typography | `h1`–`h4`、`heading`、`paragraph`、`lead`、`large`、`small`、`muted`、`blockquote`、`bullet_list`、`inline_code` | `heading(level=...)` |
 | Layout | `card`、`card_header`、`card_title`、`card_description`、`card_content`、`card_footer` | |
 | | `separator` | `orientation`，`decorative` |
 | | `skeleton` | `width`，`height` |
+| | `scroll_area` | `type_` ∈ hover/scroll/auto/always |
+| | `direction` | `direction` ∈ ltr/rtl，用于从右到左的文字 |
+| | `breadcrumb`、`breadcrumb_list`、`breadcrumb_item`、`breadcrumb_link`、`breadcrumb_page`、`breadcrumb_separator`、`breadcrumb_ellipsis` | `breadcrumb_separator(icon=...)` |
+| | `pagination` | `page`，`total`，`siblings`，`on_change` |
 | Disclosure | `tabs`、`tabs_list`、`tabs_content` | `value`，`orientation` |
 | | `accordion`、`accordion_item`、`accordion_trigger`、`accordion_content` | `value`，`multiple` |
+| | `collapsible`、`collapsible_trigger`、`collapsible_content` | `value`，以及 `open()`/`close()`/`toggle()` |
 | Overlays | `dialog`、`dialog_trigger`、`dialog_content`、`dialog_footer` | `open()`/`close()`/`toggle()`，`side`，`closable` |
+| | `sheet`、`sheet_trigger`、`sheet_content`、`sheet_footer` | 吸附到某条边的对话框；`side` ∈ right/left/top/bottom |
+| | `drawer`、`drawer_trigger`、`drawer_content`、`drawer_footer` | 可滑动关闭的 sheet；`side` ∈ bottom/… |
+| | `alert_dialog`、`alert_dialog_trigger`、`alert_dialog_content`、`alert_dialog_action`、`alert_dialog_cancel`、`alert_dialog_footer` | 必须由用户作答的对话框 |
 | | `popover`、`popover_trigger`、`popover_content` | `side`，`align` |
+| | `hover_card`、`hover_card_trigger`、`hover_card_content` | `side`，`align` |
 | | `dropdown_menu` | `items`，`align`，`on_select` |
+| | `context_menu`、`context_menu_trigger`、`context_menu_content` | `items`，`on_select` |
+| | `menubar` | `menus`（label → items），`align`，`on_select` |
+| | `navigation_menu` | `items`（链接与面板），`on_select` |
+| | `command` | `items`，`placeholder`，`empty_text`，`filter`，`on_select`，`on_search` |
 | | `tooltip` | `text`，`side`，`delay` |
+| Feedback | `toast_provider` | `position` ∈ 六个角，`duration`，`swipe_direction` |
+| | `toast` | `title`，`description`，`variant` ∈ default/destructive/success，`duration`，`closable` |
+| Theming | `theming` | 见 [主题](#主题) |
 | Icons | `icon` | `icon('check', size=16)` |
 
 `options` 和 `items` 在任何地方都接受以下这些写法：
@@ -483,7 +610,7 @@ poetry publish --repository testpypi --build
 
 | 产物 | 内容 |
 | --- | --- |
-| wheel | 只有 `nicegui_shadcn/` —— Python 模块、24 个 `.vue` 模板，以及含两个预构建资源的 `static/`。 |
+| wheel | 只有 `nicegui_shadcn/` —— Python 模块、54 个 `.vue` 模板，以及含两个预构建资源的 `static/`。 |
 | sdist | 上述内容之外，还有 `frontend/`（Tailwind 源码和 esbuild 入口）、`package.json` + `package-lock.json`（用于锁定那两个构建工具）、`examples/`、`tests/` 和 `AGENT.md`，以便从源码重建这些资源。 |
 
 构建输入被特意放在包外的 `frontend/` 里，这样 wheel 保持纯运行时形态，导入 `nicegui_shadcn`

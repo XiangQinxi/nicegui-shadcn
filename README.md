@@ -43,6 +43,7 @@ ui.run()
   - [Display](#display)
   - [Disclosure](#disclosure)
   - [Overlays](#overlays)
+  - [Menus, commands and feedback](#menus-commands-and-feedback)
   - [Icons](#icons)
 - [Dark mode](#dark-mode)
 - [Theme](#theme)
@@ -78,8 +79,8 @@ Nothing else is registered globally — no Tailwind runtime, no CDN imports.
 | --- | --- |
 | `nicegui_shadcn/theme.py` | Serves `static/` and adds the `<link>`. Runs on import. |
 | `frontend/tailwind.css` | Tailwind v4 source: shadcn design tokens, `@theme inline` exposure, `dark` variant bound to `body.body--dark`. Build input, not shipped in the wheel. |
-| `nicegui_shadcn/static/shadcn.css` | The compiled stylesheet (~191 kB). |
-| `nicegui_shadcn/static/vendor/reka-ui.js` | The `reka-ui` primitives the library wraps, tree-shaken to ~283 kB. |
+| `nicegui_shadcn/static/shadcn.css` | The compiled stylesheet (~201 kB). |
+| `nicegui_shadcn/static/vendor/reka-ui.js` | The `reka-ui` primitives the library wraps, tree-shaken to ~381 kB. |
 | `frontend/vendor/reka-entry.js` | The esbuild entry that produces the bundle above. Build input. |
 | `nicegui_shadcn/_tw_merge.py` | A dependency-free port of `tailwind-merge`, i.e. the `cn()` helper. |
 | `nicegui_shadcn/elements/*.py` | One class per component: `ShadcnElement` plus NiceGUI's `ValueElement`/`TextElement` mixins. |
@@ -196,6 +197,17 @@ shadcn.toggle('Bold', value=True)
 shadcn.toggle_group(['left', 'center', 'right'], value='center', multiple=False)
 ```
 
+The pickers, the one-time-password field and the combobox are form controls as well:
+
+```python
+shadcn.native_select({'system': 'System', 'light': 'Light'}, value='system')
+shadcn.combobox({'next': 'Next.js', 'svelte': 'SvelteKit'}, value='next')
+shadcn.input_otp(length=6, groups=[3, 3])              # masked, pattern and inputmode too
+
+shadcn.calendar(value='2026-03-15', week_starts_on=1)  # ISO date in, ISO date out
+shadcn.date_picker(value='2026-03-15', min_value='2026-03-01')
+```
+
 `bind_value` between a shadcn control and a normal NiceGUI element is the point of the
 whole exercise:
 
@@ -222,6 +234,43 @@ shadcn.alert(title='Error', description='Your session has expired.', variant='de
 
 progress = shadcn.progress(60)
 progress.set_value(80)
+```
+
+The rest of the display family — item rows, empty states, breadcrumbs and typography:
+
+```python
+with shadcn.item():
+    with shadcn.item_media(variant='icon'):
+        shadcn.icon('check', size=16)
+    with shadcn.item_content():
+        shadcn.item_title('Deployment ready')
+        shadcn.item_description('Your project is live.')
+    with shadcn.item_actions():
+        shadcn.badge('New')
+
+with shadcn.empty():
+    with shadcn.empty_header():
+        with shadcn.empty_media(variant='icon'):
+            shadcn.icon('info')
+        shadcn.empty_title('No results')
+        shadcn.empty_description('Try a different search.')
+
+shadcn.spinner(size=20)
+shadcn.kbd('Ctrl')
+shadcn.marker('New', variant='success')
+shadcn.aspect_ratio(16 / 9)
+shadcn.pagination(page=2, total=5)
+
+shadcn.h1('Installation')
+shadcn.paragraph('Then restart the server.')
+
+with shadcn.breadcrumb():
+    with shadcn.breadcrumb_list():
+        with shadcn.breadcrumb_item():
+            shadcn.breadcrumb_link('Home')
+        shadcn.breadcrumb_separator()
+        with shadcn.breadcrumb_item():
+            shadcn.breadcrumb_page('Components')
 ```
 
 ### Disclosure
@@ -286,6 +335,57 @@ with shadcn.tooltip('Add to library', side='top'):
 `DialogContent(side=...)` also accepts `'right'`, `'left'`, `'top'` and `'bottom'` for
 sheet-style panels.
 
+### Menus, commands and feedback
+
+The remaining overlay family — menu bars, context menus, hover cards, the navigation menu,
+the command palette and toasts:
+
+```python
+with shadcn.alert_dialog() as confirm:
+    shadcn.alert_dialog_trigger('Delete project')
+    with shadcn.alert_dialog_content(title='Are you absolutely sure?',
+                                     description='This action cannot be undone.'):
+        with shadcn.alert_dialog_footer():
+            shadcn.alert_dialog_cancel('Cancel')
+            shadcn.alert_dialog_action('Continue').on('click', confirm.close)
+
+with shadcn.sheet():
+    shadcn.sheet_trigger('Open sheet')
+    with shadcn.sheet_content(title='Edit profile', side='right'):
+        shadcn.input(value='Ada Lovelace')
+
+with shadcn.hover_card():
+    shadcn.hover_card_trigger().classes('underline')
+    with shadcn.hover_card_content():
+        shadcn.muted('@ada - joined March 2020')
+
+shadcn.menubar({'File': [{'value': 'new', 'label': 'New'},
+                         {'kind': 'separator'},
+                         {'value': 'quit', 'label': 'Quit'}],
+                'Edit': [{'value': 'undo', 'label': 'Undo'}]},
+               on_select=lambda e: ui.notify(str(e.args)))
+
+shadcn.navigation_menu([
+    {'label': 'Home', 'href': '/'},
+    {'label': 'Products', 'items': [{'label': 'Analytics', 'href': '/analytics'}]},
+])
+
+with shadcn.context_menu():
+    shadcn.context_menu_trigger('Right-click me')
+    shadcn.context_menu_content([{'value': 'copy', 'label': 'Copy'}],
+                                on_select=lambda e: ui.notify(str(e.args)))
+
+shadcn.command([{'value': 'calendar', 'label': 'Calendar', 'group': 'Suggestions'},
+                {'kind': 'separator'},
+                {'value': 'logout', 'label': 'Log out', 'group': 'Settings'}],
+               on_select=lambda e: ui.notify(str(e.args)))
+
+with shadcn.toast_provider():
+    saved = shadcn.toast('Saved', description='Your changes are live.')
+
+saved.open()      # or let the provider's duration close it
+```
+
 ### Icons
 
 The library inlines the handful of [Lucide](https://lucide.dev) glyphs it needs, so no
@@ -348,27 +448,55 @@ unchanged: `.bind_value()`, `.on()`, `.tooltip()`, `.classes()`, `.with_classes(
 | Group | Factory | Highlights |
 | --- | --- | --- |
 | Buttons | `button` | `variant` ∈ default/destructive/outline/secondary/ghost/link, `size` ∈ default/sm/lg/icon, `icon`, `icon_position`, `loading`, `disabled` |
+| | `button_group`, `button_group_text`, `button_group_separator` | `vertical: bool` |
 | Forms | `input`, `textarea` | `placeholder`, `type`, `disabled`, `readonly`, `autocomplete`, `rows`, `on_change` |
 | | `checkbox`, `switch` | `value: bool`, `disabled`, `on_change` |
 | | `label` | `for_` takes an element or an id |
 | | `select` | `options`, `value`, `placeholder`, `disabled` |
+| | `native_select` | the plain HTML `<select>`; `options`, `value`, `disabled` |
+| | `combobox` | `options`, `value`, `placeholder`, `search_placeholder`, `filter`, `on_select` |
 | | `radio_group` | `options`, `value`, `orientation`, `disabled` |
 | | `slider` | `min`, `max`, `step`, `orientation`, `disabled` |
 | | `toggle`, `toggle_group` | `value`, `multiple`, `orientation`, `disabled` |
+| | `input_otp` | `length`, `groups`, `masked`, `pattern`, `inputmode`, `disabled` |
+| | `calendar` | `value` (ISO string or `date`), `min_value`, `max_value`, `week_starts_on`, `number_of_months`, `fixed_weeks`, `disabled`, `readonly` |
+| | `date_picker` | a `popover` + `calendar` composition: `value`, `min_value`, `max_value`, `format_date`, `on_date_change` |
 | Display | `badge` | `variant` ∈ default/secondary/destructive/outline |
 | | `avatar` | `src`, `fallback`, `size` ∈ default/sm/lg/xl |
-| | `alert` | `title`, `description`, `variant` ∈ default/destructive, `icon` |
+| | `alert`, `alert_title`, `alert_description` | `title`, `description`, `variant` ∈ default/destructive, `icon` |
 | | `progress` | `value` (clamped 0–100), `set_value()` |
+| | `spinner` | `size`, `label` (the accessible name) |
+| | `kbd`, `marker` | `marker` takes `variant` ∈ default/success/warning/error/info |
+| | `aspect_ratio` | `ratio` |
+| | `empty`, `empty_header`, `empty_media`, `empty_title`, `empty_description`, `empty_content` | `empty_media(variant=...)` ∈ default/icon |
+| | `item`, `item_group`, `item_header`, `item_media`, `item_title`, `item_description`, `item_content`, `item_actions`, `item_footer`, `item_separator` | `item(variant=...)` ∈ default/outline/muted, `size` ∈ default/sm |
 | | `table`, `table_container`, `table_header`, `table_body`, `table_footer`, `table_row`, `table_head`, `table_cell`, `table_caption` | |
+| Typography | `h1`–`h4`, `heading`, `paragraph`, `lead`, `large`, `small`, `muted`, `blockquote`, `bullet_list`, `inline_code` | `heading(level=...)` |
 | Layout | `card`, `card_header`, `card_title`, `card_description`, `card_content`, `card_footer` | |
 | | `separator` | `orientation`, `decorative` |
 | | `skeleton` | `width`, `height` |
+| | `scroll_area` | `type_` ∈ hover/scroll/auto/always |
+| | `direction` | `direction` ∈ ltr/rtl, for right-to-left scripts |
+| | `breadcrumb`, `breadcrumb_list`, `breadcrumb_item`, `breadcrumb_link`, `breadcrumb_page`, `breadcrumb_separator`, `breadcrumb_ellipsis` | `breadcrumb_separator(icon=...)` |
+| | `pagination` | `page`, `total`, `siblings`, `on_change` |
 | Disclosure | `tabs`, `tabs_list`, `tabs_content` | `value`, `orientation` |
 | | `accordion`, `accordion_item`, `accordion_trigger`, `accordion_content` | `value`, `multiple` |
+| | `collapsible`, `collapsible_trigger`, `collapsible_content` | `value`, plus `open()`/`close()`/`toggle()` |
 | Overlays | `dialog`, `dialog_trigger`, `dialog_content`, `dialog_footer` | `open()`/`close()`/`toggle()`, `side`, `closable` |
+| | `sheet`, `sheet_trigger`, `sheet_content`, `sheet_footer` | a dialog anchored to an edge; `side` ∈ right/left/top/bottom |
+| | `drawer`, `drawer_trigger`, `drawer_content`, `drawer_footer` | a swipeable sheet; `side` ∈ bottom/… |
+| | `alert_dialog`, `alert_dialog_trigger`, `alert_dialog_content`, `alert_dialog_action`, `alert_dialog_cancel`, `alert_dialog_footer` | a dialog the user has to answer |
 | | `popover`, `popover_trigger`, `popover_content` | `side`, `align` |
+| | `hover_card`, `hover_card_trigger`, `hover_card_content` | `side`, `align` |
 | | `dropdown_menu` | `items`, `align`, `on_select` |
+| | `context_menu`, `context_menu_trigger`, `context_menu_content` | `items`, `on_select` |
+| | `menubar` | `menus` (label → items), `align`, `on_select` |
+| | `navigation_menu` | `items` (links and panels), `on_select` |
+| | `command` | `items`, `placeholder`, `empty_text`, `filter`, `on_select`, `on_search` |
 | | `tooltip` | `text`, `side`, `delay` |
+| Feedback | `toast_provider` | `position` ∈ six corners, `duration`, `swipe_direction` |
+| | `toast` | `title`, `description`, `variant` ∈ default/destructive/success, `duration`, `closable` |
+| Theming | `theming` | see [Theme](#theme) |
 | Icons | `icon` | `icon('check', size=16)` |
 
 `options` and `items` accept all of these spellings, everywhere:
@@ -503,7 +631,7 @@ What goes where:
 
 | Artifact | Contents |
 | --- | --- |
-| wheel | `nicegui_shadcn/` only — the Python modules, the 24 `.vue` templates and `static/` with the two prebuilt assets. |
+| wheel | `nicegui_shadcn/` only — the Python modules, the 54 `.vue` templates and `static/` with the two prebuilt assets. |
 | sdist | the same, plus `frontend/` (Tailwind source and esbuild entry), `package.json` + `package-lock.json` (which pin the two build tools), `examples/`, `tests/` and `AGENT.md`, so the assets can be rebuilt from source. |
 
 The build inputs deliberately live outside the package in `frontend/`, so the wheel stays

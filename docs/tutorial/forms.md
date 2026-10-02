@@ -17,6 +17,11 @@
 | `shadcn.slider` | `float` | `value` | `min`、`max`、`step`、`orientation`、`disabled`、`on_change` |
 | `shadcn.toggle` | `bool` | `text` | `value`、`disabled`、`on_change` |
 | `shadcn.toggle_group` | `str` 或 `list[str]` | `options` | `value`、`multiple`、`orientation`、`disabled`、`on_change` |
+| `shadcn.native_select` | `str` | `options` | `value`、`disabled`、`on_change` |
+| `shadcn.combobox` | `str` | `options` | `value`、`placeholder`、`search_placeholder`、`empty_text`、`filter`、`on_change`、`on_select` |
+| `shadcn.input_otp` | `str` | `value` | `length`、`groups`、`pattern`、`masked`、`disabled`、`inputmode`、`on_change` |
+| `shadcn.calendar` | `date` / `str` | `value` | `min_value`、`max_value`、`week_starts_on`、`number_of_months`、`fixed_weeks`、`disabled`、`readonly`、`locale`、`on_change` |
+| `shadcn.date_picker` | `date` / `str` | `value` | `min_value`、`max_value`、`placeholder`、`week_starts_on`、`locale`、`disabled`、`format_date`、`on_date_change` |
 | `shadcn.label` | — | `text` | `for_` |
 
 :::{warning}
@@ -136,6 +141,106 @@ slider.on_value_change(lambda e: ui.notify(f'{e.value:.0f}%'))
   `value` 参数的接受形式一致 —— 单选可以传字符串，多选可以传列表。
 - `radio_group` 的 `orientation` 默认是 `'vertical'`，`toggle_group` 与 `slider` 默认是
   `'horizontal'`。
+- `calendar` / `date_picker`：`value` 接受 `datetime.date`、`datetime.datetime` 或 ISO 的
+  `'YYYY-MM-DD'` 字符串，回传的值同样是 ISO 字符串。`min_value` / `max_value` 接受同一组
+  形式，`week_starts_on` 是 `0`（周一）到 `6`（周日）。
+- `input_otp`：值始终是字符串，长度由 `length` 决定。
+
+## 原生下拉与可搜索下拉
+
+`select` 是 reka-ui 的自绘下拉，弹出层被 teleport 到 `<body>`。如果你需要**原生**
+`<select>`（表单提交、移动端系统选择器、或者极简的渲染开销），用 `native_select`：
+
+```python
+shadcn.native_select({'system': 'System', 'light': 'Light', 'dark': 'Dark'}, value='system')
+shadcn.native_select(['a', 'b', 'c'])
+```
+
+`native_select` 的 `options` 与其它控件共用同一套规范化规则，但它渲染的是真正的
+`<select>` + `<option>`，没有 `placeholder` 参数 —— 需要占位项时自己在选项里加一条。
+
+选项很多时用 `combobox`：它是一个「按钮 + 搜索框 + 选项列表」的组合，输入时在浏览器里做
+过滤：
+
+```python
+shadcn.combobox({'next': 'Next.js', 'svelte': 'SvelteKit', 'nuxt': 'Nuxt'},
+                placeholder='选择框架…',
+                search_placeholder='搜索框架…',
+                empty_text='没有匹配项')
+shadcn.combobox(['Apple', 'Banana', 'Cherry'], filter=False)
+```
+
+| 参数 | 默认值 | 说明 |
+| --- | --- | --- |
+| `placeholder` | `'Select an option...'` | 未选中时按钮上的文字 |
+| `search_placeholder` | `'Search...'` | 面板内搜索框的占位文字 |
+| `empty_text` | `'No results found.'` | 过滤后没有结果时的提示 |
+| `filter` | `True` | 是否在浏览器端过滤；`False` 时列表原样展示 |
+| `on_select` | `None` | 选中某项时回调 |
+
+`combobox` 与 `select` 一样有 `set_options(...)`，可以运行时换掉整组选项。
+
+## 一次性验证码：`input_otp`
+
+```python
+shadcn.input_otp(length=6)
+shadcn.input_otp(length=6, groups=[3, 3])
+shadcn.input_otp(length=4, pattern=r'^[0-9]+$', on_change=lambda e: ui.notify(e.value))
+shadcn.input_otp(length=6, masked=True)
+```
+
+| 参数 | 默认值 | 说明 |
+| --- | --- | --- |
+| `length` | `6` | 能输入多少个字符 |
+| `groups` | `None` | 分组长度，例如 `[3, 3]` 会渲染成 `123-456` |
+| `pattern` | `None` | 逐字符校验的正则源码；模块里也导出了三个现成常量 |
+| `masked` | `False` | 用圆点遮住输入内容 |
+| `inputmode` | `'numeric'` | 移动端键盘类型 |
+| `on_change` | `None` | 值变化回调，`e.value` 是当前完整输入 |
+
+`pattern` 可以直接用模块导出的常量，省得自己写正则。它们既可以从 `shadcn` 侧取，也可以从
+`nicegui_shadcn.elements` 导入：
+
+```python
+shadcn.input_otp(length=6, pattern=shadcn.REGEXP_ONLY_DIGITS)
+```
+
+## 日历与日期选择
+
+`calendar` 是一个内联的月历，`date_picker` 则是「按钮 + popover + calendar」的组合：
+
+```python
+import datetime
+from nicegui import ui
+from nicegui_shadcn import shadcn
+
+shadcn.calendar(value='2026-01-15')
+shadcn.calendar(datetime.date(2026, 1, 15), number_of_months=2)
+shadcn.calendar(min_value='2026-01-01', max_value='2026-12-31', locale='zh-CN')
+
+shadcn.date_picker(value='2026-01-15', placeholder='选择日期')
+picker = shadcn.date_picker(placeholder='选择日期',
+                            on_date_change=lambda e: ui.notify(str(e.value)))
+picker.value = '2026-02-01'
+```
+
+| 参数 | 适用 | 说明 |
+| --- | --- | --- |
+| `min_value` / `max_value` | 两者 | 可选日期区间（含端点） |
+| `week_starts_on` | 两者 | `0` 周一 … `6` 周日；默认按 `locale` 推断 |
+| `number_of_months` | `calendar` | 并排显示几个月 |
+| `fixed_weeks` | `calendar` | 固定渲染六行，切换月份时高度不跳动 |
+| `disabled` / `readonly` | 两者 | 整体禁用；`readonly` 允许聚焦但不允许选 |
+| `locale` | 两者 | 月份与星期名的语言，例如 `'zh-CN'` |
+| `format_date` | `date_picker` | 把 ISO 字符串转成按钮上显示的文本 |
+
+`calendar` 的回调是 `on_change`，`date_picker` 的是 `on_date_change` —— 两者都存在，但不要
+混用。两者都是 `ValueElement`，`.value` 可以直接赋值。
+
+:::{tip}
+需要「日期 + 时间」时，把 `date_picker` 与一个 `shadcn.input(type='time')` 拼在一起，
+比找第三个组件更省事。
+:::
 
 ## 选项的写法
 

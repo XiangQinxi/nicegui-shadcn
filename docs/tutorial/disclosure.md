@@ -137,6 +137,53 @@ tabs_list.set_tabs(['x', 'y', 'z'])
 切换标签不会重置面板里的表单 —— 输入框的值会保留，服务端也总能找到这些元素。这个行为的
 代价见 {doc}`limitations`。
 
+## collapsible
+
+`collapsible` 是最小单位的折叠：**一个** 触发器 + **一块** 内容，没有 item 这一层。需要
+「显示更多」「高级设置」这类开关时用它，比手写 `visible` 切换更符合无障碍语义。
+
+```python
+with shadcn.collapsible() as advanced:
+    shadcn.collapsible_trigger('高级设置')
+    with shadcn.collapsible_content():
+        shadcn.input(placeholder='超时时间（毫秒）')
+        shadcn.switch()
+```
+
+| 工厂函数 | 位置参数 | 关键字参数 |
+| --- | --- | --- |
+| `shadcn.collapsible` | — | `value`、`disabled`、`on_change` |
+| `shadcn.collapsible_trigger` | `text` | `as_child`、`on_click` |
+| `shadcn.collapsible_content` | — | — |
+
+`collapsible` 与 `dialog`、`popover` 一样继承自 `_Openable`，所以它提供
+**`.open()` / `.close()` / `.toggle()`** 三个方法，同时又是 `ValueElement`，`.value` 可以直接
+读写、可以 `bind_value`：
+
+```python
+advanced = shadcn.collapsible(value=False, on_change=lambda e: ui.notify(str(e.value)))
+advanced.open()          # 展开
+advanced.close()         # 收起
+advanced.toggle()        # 取反
+advanced.value = True    # 等价于 open()
+```
+
+`collapsible_trigger(as_child=True)` 会把触发器的行为合并到**唯一的那个子元素**上，于是你
+可以用自己的按钮当触发器：
+
+```python
+with shadcn.collapsible():
+    with shadcn.collapsible_trigger(as_child=True):
+        shadcn.button('Toggle details', variant='outline', icon='chevron-down')
+    with shadcn.collapsible_content():
+        shadcn.muted('被折叠的内容。')
+```
+
+:::{note}
+`collapsible_content` 的面板与 `tabs_content`、`accordion_content` 一样是**常驻 DOM** 的，
+只是被 `hidden` 隐藏，所以折叠再展开不会重置里面的表单。
+:::
+
 ## 下一步
 
 - {doc}`overlays` —— dialog 与 popover，另一种“按需显示”的组织方式。

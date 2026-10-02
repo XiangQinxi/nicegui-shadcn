@@ -9,7 +9,6 @@ from nicegui import ui
 from nicegui.elements.mixins.text_element import TextElement
 
 from .. import icons
-from .._tw_merge import tw_join
 from .base import ShadcnElement, option
 
 __all__ = [

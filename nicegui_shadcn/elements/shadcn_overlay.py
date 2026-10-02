@@ -15,11 +15,8 @@ from typing import Any
 from nicegui.elements.mixins.text_element import TextElement
 from nicegui.elements.mixins.value_element import ValueElement
 
-from .._tw_merge import tw_join
-from .base import ShadcnElement, normalize_options
-from .shadcn_button import _BASE as _BUTTON_BASE
-from .shadcn_button import _SIZES as _BUTTON_SIZES
-from .shadcn_button import _VARIANTS as _BUTTON_VARIANTS
+from .base import ShadcnElement, _Openable, normalize_options
+from .shadcn_button import button_classes as _button_classes
 
 __all__ = [
     'Dialog', 'DialogContent', 'DialogFooter', 'DialogTrigger',
@@ -29,32 +26,11 @@ __all__ = [
 ]
 
 
-def _button_classes(variant: str = 'default', size: str = 'default') -> str:
-    """Compose the standard button styling, for triggers that render as buttons."""
-    return tw_join(_BUTTON_BASE, _BUTTON_VARIANTS[variant], _BUTTON_SIZES[size])
-
-
-class _Openable:
-    """Mixin giving an overlay element explicit ``open``/``close``/``toggle`` methods."""
-
-    def open(self) -> None:  # noqa: A003 - matches the DOM/ARIA vocabulary
-        """Show the overlay."""
-        self.set_value(True)  # type: ignore[attr-defined]
-
-    def close(self) -> None:
-        """Hide the overlay."""
-        self.set_value(False)  # type: ignore[attr-defined]
-
-    def toggle(self) -> None:
-        """Flip the overlay between shown and hidden."""
-        self.set_value(not self.value)  # type: ignore[attr-defined]
-
-
 class Dialog(_Openable, ShadcnElement, ValueElement, component='shadcn_dialog.vue'):
     """A modal dialog.
 
     :param value: whether the dialog starts out open.
-    :param on_change: callback invoked with the new open state when it changes.
+    :param on_change: callback invoked with the value-change event when the open state changes; read ``e.value`` for the new state.
         A click on the backdrop or on the close button also lands here, so a
         ``dialog.on('...')``-free way to react to dismissal is ``on_change``.
     """
@@ -149,7 +125,7 @@ class Popover(_Openable, ShadcnElement, ValueElement, component='shadcn_popover.
     """A floating panel anchored to a trigger.
 
     :param value: whether the popover starts out open.
-    :param on_change: callback invoked with the new open state when it changes.
+    :param on_change: callback invoked with the value-change event when the open state changes; read ``e.value`` for the new state.
     """
 
     def __init__(self,

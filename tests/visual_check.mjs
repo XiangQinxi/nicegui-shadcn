@@ -14,6 +14,12 @@
  * Chromium reports an `oklch()` token back as `oklch(...)`, so resolving the
  * same token on a probe element yields an exactly comparable value and proves
  * which design token a component actually used.
+ *
+ * Two reka-ui lessons are baked into the selectors below: reka does not emit
+ * every `data-reka-*` attribute you might hope for, so an attribute is only
+ * asserted after confirming it exists; and a reka-rendered primitive gets its
+ * own generated `id`, which overrides an id set from Python — so rendered
+ * primitives are located structurally rather than by a Python-side id.
  */
 import { existsSync } from 'node:fs';
 import { chromium } from 'playwright-core';
@@ -115,6 +121,13 @@ try {
     ['accordion', 1], ['accordion_item', 2], ['accordion_trigger', 2], ['accordion_content', 2],
     ['select', 1], ['radio_group', 1], ['slider', 1], ['toggle', 2], ['toggle_group', 1],
     ['dialog_trigger', 1], ['popover_trigger', 1],
+    // the second wave of components
+    ['aspect_ratio', 1], ['calendar', 1], ['scroll_area', 1], ['native_select', 1],
+    ['pagination', 1], ['pagination_previous', 1], ['pagination_next', 1],
+    ['collapsible', 1], ['collapsible_trigger', 1], ['collapsible_content', 1],
+    ['hover_card_trigger', 1], ['alert_dialog_trigger', 1], ['context_menu_trigger', 1],
+    ['drawer_trigger', 1], ['calendar', 1], ['input_otp', 1],
+    ['command', 1], ['combobox', 1], ['menubar', 1], ['navigation_menu', 1],
   ];
   const missing = [];
   for (const [name, expected] of MOUNTS) {
@@ -275,6 +288,544 @@ try {
   await page.locator('button', { hasText: /^Submit$/ }).first().click();
   const notified = await page.locator('.q-notification').first().innerText({ timeout: 15000 }).catch(() => '');
   check('typed value round-tripped to the server', notified.includes('renamed-project'), notified.trim());
+
+  // ======================================================================= //
+  // Newly added component families
+  // ======================================================================= //
+  // Every interactive widget below writes to `#probe-log` on the server, so a
+  // check that waits for its own token in that line proves the click travelled
+  // all the way through the websocket into the bound Python handler.
+  const probeText = () => page.locator('#probe-log').innerText().catch(() => '');
+  let probeSnapshot = '';
+  const waitForEvent = async (needle, timeout = 6000) => {
+    const deadline = Date.now() + timeout;
+    while (Date.now() < deadline) {
+      probeSnapshot = await probeText();
+      if (probeSnapshot.includes(needle)) return true;
+      await page.waitForTimeout(150);
+    }
+    return false;
+  };
+
+  // ---- button group / kbd / spinner / marker ----------------------------- #
+  const groups = await page.evaluate(() => [...document.querySelectorAll('div')]
+    .filter((d) => (d.className ?? '').includes('[&>*]:rounded-none'))
+    .map((box) => ({
+      cls: box.className,
+      children: [...box.children].map((c) => ({ tag: c.tagName, text: c.textContent.trim(), cls: c.className })),
+    })));
+  check('button group renders a segmented row of buttons',
+    groups.length >= 1 && groups[0].children.length === 3
+      && groups[0].children.map((c) => c.text).join(',') === 'Day,Week,Month'
+      && groups[0].children.every((c) => c.tag === 'BUTTON'),
+    groups.map((g) => g.children.map((c) => c.text)));
+  const labelled = groups.find((g) => g.children.some((c) => c.text === 'Zoom'));
+  check('button group text and separator render between the buttons',
+    labelled !== undefined && labelled.children.length === 3
+      && labelled.children[0].tag === 'DIV' && labelled.children[2].text === 'Fit'
+      && labelled.children[1].cls.includes('w-px') && labelled.children[1].cls.includes('bg-input'),
+    labelled?.children.map((c) => `${c.tag}:${c.text}:${c.cls.slice(0, 24)}`));
+
+  const kbds = await page.evaluate(() => [...document.querySelectorAll('kbd')]
+    .map((k) => ({ tag: k.tagName, text: k.textContent.trim(), bg: getComputedStyle(k).backgroundColor })));
+  check('kbd renders shortcut keys as <kbd> elements',
+    kbds.length >= 2 && kbds.map((k) => k.text).join('') === 'CtrlK'
+      && kbds.every((k) => k.tag === 'KBD'),
+    kbds.map((k) => `${k.tag}:${k.text}`));
+  check('kbd paints var(--muted)',
+    kbds.length > 0 && kbds[0].bg === await resolve(page, 'var(--muted)'), kbds[0]?.bg);
+
+  const spinners = await page.evaluate(() => [...document.querySelectorAll('[role="status"]')]
+    .map((s) => ({
+      label: s.getAttribute('aria-label'),
+      spins: s.classList.contains('animate-spin') || !!s.querySelector('.animate-spin'),
+    })));
+  check('spinner announces itself and animates',
+    spinners.length >= 2 && spinners.some((s) => s.label === 'Loading') && spinners.every((s) => s.spins),
+    spinners);
+
+  const markers = await page.evaluate(() => [...document.querySelectorAll('div')]
+    .filter((d) => (d.className ?? '').startsWith('flex items-center gap-2 text-sm'))
+    .map((d) => ({
+      text: d.textContent.trim(),
+      dotCls: d.firstElementChild?.className ?? '',
+      bg: d.firstElementChild ? getComputedStyle(d.firstElementChild).backgroundColor : null,
+    })));
+  const markerColors = markers.map((m) => m.bg);
+  check('marker renders one dot per status',
+    markers.length === 5 && markers.map((m) => m.text).join(',') === 'Default,Success,Warning,Error,Live',
+    markers.map((m) => m.text));
+  check('marker default dot uses var(--primary)',
+    markers[0]?.bg === await resolve(page, 'var(--primary)'), markers[0]?.bg);
+  check('marker status dots use distinct palette colours',
+    markerColors.length === 5 && markerColors.every((c) => c && c !== 'rgba(0, 0, 0, 0)')
+      && new Set(markerColors).size === 5,
+    markerColors);
+  check('marker can pulse', markers[4]?.dotCls.includes('animate-pulse') === true, markers[4]?.dotCls);
+
+  // ---- typography -------------------------------------------------------- #
+  const typo = await page.evaluate(() => {
+    const find = (sel, text) => [...document.querySelectorAll(sel)]
+      .find((el) => el.textContent.trim().startsWith(text));
+    const size = (el) => (el ? getComputedStyle(el).fontSize : null);
+    const h1 = find('h1', 'Heading one');
+    const quote = find('blockquote', 'Every CSS class');
+    const qs = quote ? getComputedStyle(quote) : null;
+    const code = find('code', 'from nicegui_shadcn');
+    const list = [...document.querySelectorAll('ul')].find((u) => u.textContent.includes('Copy a component'));
+    const muted = find('p', 'Muted supporting copy');
+    return {
+      sizes: [size(h1), size(find('h2', 'Heading two')), size(find('h3', 'Heading three')), size(find('h4', 'Heading four'))],
+      tags: [h1, find('h2', 'Heading two'), find('h3', 'Heading three'), find('h4', 'Heading four')].map((el) => el?.tagName),
+      weight: h1 ? getComputedStyle(h1).fontWeight : null,
+      lead: size(find('p', 'A lead paragraph')),
+      large: size(find('.text-lg', 'Large and semibold')),
+      small: size(find('small', 'Small print')),
+      quote: qs ? { style: qs.fontStyle, border: qs.borderLeftWidth } : null,
+      code: code ? { bg: getComputedStyle(code).backgroundColor, tag: code.tagName } : null,
+      listItems: list ? list.querySelectorAll(':scope > li').length : 0,
+      listTag: list?.tagName,
+      muted: muted ? getComputedStyle(muted).color : null,
+    };
+  });
+  check('typography renders the h1..h4 scale from Python `level`',
+    typo.sizes.join(',') === '36px,30px,24px,20px' && typo.tags.join(',') === 'H1,H2,H3,H4'
+      && Number(typo.weight) >= 800, typo.sizes);
+  check('lead / large / small / muted follow their variants',
+    typo.lead === '20px' && typo.large === '18px' && typo.small === '14px'
+      && typo.muted === await resolve(page, 'var(--muted-foreground)'),
+    { lead: typo.lead, large: typo.large, small: typo.small, muted: typo.muted });
+  check('blockquote carries its rule and inline_code paints var(--muted)',
+    typo.quote?.style === 'italic' && typo.quote?.border === '2px'
+      && typo.code?.tag === 'CODE' && typo.code?.bg === await resolve(page, 'var(--muted)'),
+    { quote: typo.quote, code: typo.code });
+  check('bullet list renders one <li> per entry',
+    typo.listTag === 'UL' && typo.listItems === 3, { tag: typo.listTag, items: typo.listItems });
+
+  // ---- content: aspect ratio, empty state, scroll area, direction -------- #
+  const content = await page.evaluate(() => {
+    const empty = document.querySelector('[class*="border-dashed"]');
+    const ar = document.querySelector('[data-shadcn_aspect_ratio]');
+    const wrap = ar?.parentElement;
+    const sc = document.querySelector('[data-shadcn_scroll_area]');
+    const vp = sc?.querySelector('[class*="size-full"]');
+    return {
+      empty: empty ? {
+        radius: getComputedStyle(empty).borderTopLeftRadius,
+        dashed: getComputedStyle(empty).borderTopStyle,
+        svg: !!empty.querySelector('svg'),
+        title: /No projects yet/.test(empty.textContent),
+        description: /Create your first project/.test(empty.textContent),
+        button: !!empty.querySelector('button'),
+      } : null,
+      ratio: wrap ? { inline: wrap.style.paddingBottom, relative: getComputedStyle(wrap).position } : null,
+      scroll: sc ? {
+        overflow: getComputedStyle(sc).overflow,
+        scrollHeight: vp?.scrollHeight ?? 0,
+        clientHeight: vp?.clientHeight ?? 0,
+      } : null,
+      direction: document.querySelector('#direction-block')?.getAttribute('dir') ?? null,
+    };
+  });
+  check('empty state renders media, title, description and content',
+    content.empty !== null && content.empty.svg && content.empty.title
+      && content.empty.description && content.empty.button
+      && content.empty.dashed === 'dashed' && parseFloat(content.empty.radius) > 0,
+    content.empty);
+  check('aspect ratio reserves its box through the reka wrapper',
+    content.ratio?.relative === 'relative' && content.ratio?.inline === '56.25%', content.ratio);
+  check('scroll area clips its viewport around taller content',
+    content.scroll?.overflow === 'hidden' && content.scroll.scrollHeight > content.scroll.clientHeight,
+    content.scroll);
+  check('direction element carries the dir attribute from Python',
+    content.direction === 'rtl', content.direction);
+
+  // ---- item --------------------------------------------------------------- #
+  const items = await page.evaluate(() => {
+    const n = (slot) => document.querySelectorAll(`[data-slot="${slot}"]`).length;
+    const pick = (variant) => [...document.querySelectorAll('[data-slot="item"]')]
+      .find((el) => el.getAttribute('data-variant') === variant);
+    const outline = pick('outline');
+    const muted = pick('muted');
+    return {
+      slots: ['item', 'item-media', 'item-content', 'item-title', 'item-description',
+        'item-actions', 'item-footer', 'item-separator'].map((s) => `${s}:${n(s)}`),
+      variants: [...document.querySelectorAll('[data-slot="item"]')].map((el) => el.getAttribute('data-variant')),
+      sizes: [...document.querySelectorAll('[data-slot="item"]')].map((el) => el.getAttribute('data-size')),
+      outlineBorder: outline ? getComputedStyle(outline).borderTopColor : null,
+      mutedBg: muted ? getComputedStyle(muted).backgroundColor : null,
+      groupRole: document.querySelector('[data-slot="item"]')?.parentElement?.getAttribute('role') ?? null,
+    };
+  });
+  check('item family renders every slot',
+    items.slots.join(',') === 'item:2,item-media:2,item-content:2,item-title:2,item-description:2,item-actions:1,item-footer:1,item-separator:1'
+      && items.groupRole === 'list', items.slots);
+  check('item variants drive the border and background',
+    items.variants.join(',') === 'outline,muted' && items.sizes.join(',') === 'default,sm'
+      && items.outlineBorder === await resolve(page, 'var(--border)')
+      && items.mutedBg !== 'rgba(0, 0, 0, 0)',
+    { variants: items.variants, sizes: items.sizes, border: items.outlineBorder, muted: items.mutedBg });
+
+  // ---- breadcrumb / native select / pagination ---------------------------- #
+  const crumb = await page.evaluate(() => {
+    const nav = document.querySelector('nav[aria-label="breadcrumb"]');
+    if (!nav) return null;
+    return {
+      ol: nav.querySelectorAll('ol').length,
+      items: nav.querySelectorAll('li').length,
+      links: [...nav.querySelectorAll('a')].map((a) => a.textContent.trim()),
+      separators: nav.querySelectorAll('li[role="presentation"][aria-hidden="true"]').length,
+      current: nav.querySelector('[aria-current="page"]')?.textContent.trim() ?? null,
+      ellipsis: nav.querySelector('.sr-only')?.textContent.trim() ?? null,
+    };
+  });
+  check('breadcrumb renders a trailer of links, separators and a page',
+    crumb !== null && crumb.ol === 1 && crumb.items === 7 && crumb.links.join(',') === 'Home,Components'
+      && crumb.separators === 3 && crumb.current === 'Breadcrumb', crumb);
+  check('breadcrumb ellipsis is hidden from sight but not from screen readers',
+    crumb?.ellipsis === 'More', crumb?.ellipsis);
+
+  const nativeSelect = await page.evaluate(() => {
+    const el = document.querySelector('[data-shadcn_native_select] select');
+    return el ? {
+      tag: el.tagName, value: el.value,
+      options: [...el.options].map((o) => `${o.value}:${o.textContent.trim()}`),
+      height: getComputedStyle(el).height,
+    } : null;
+  });
+  check('native select is a real <select> carrying the Python value',
+    nativeSelect !== null && nativeSelect.tag === 'SELECT' && nativeSelect.value === 'growth'
+      && nativeSelect.options.join(',') === 'starter:Starter,growth:Growth,scale:Scale'
+      && nativeSelect.height === '36px',
+    nativeSelect);
+
+  const pager = await page.evaluate(() => {
+    const nav = document.querySelector('[data-shadcn_pagination]');
+    if (!nav) return null;
+    return {
+      tag: nav.tagName,
+      label: nav.getAttribute('aria-label'),
+      current: nav.querySelector('[aria-current="page"]')?.textContent.trim() ?? null,
+      numbers: [...nav.querySelectorAll('button')].map((b) => b.getAttribute('aria-label')).filter((l) => /^Go to page \d+$/.test(l)).length,
+      prevDisabled: nav.querySelector('[data-shadcn_pagination_previous]')?.hasAttribute('disabled') ?? null,
+      nextDisabled: nav.querySelector('[data-shadcn_pagination_next]')?.hasAttribute('disabled') ?? null,
+    };
+  });
+  check('pagination marks the current page and keeps both arrows live',
+    pager !== null && pager.tag === 'NAV' && pager.label === 'Pagination' && pager.current === '3'
+      && pager.numbers === 5 && pager.prevDisabled === false && pager.nextDisabled === false,
+    pager);
+
+  // ---- collapsible --------------------------------------------------------- #
+  const collapsed = await page.locator('[data-shadcn_collapsible_content]').first()
+    .evaluate((el) => el.getBoundingClientRect().height);
+  await page.locator('[data-shadcn_collapsible_trigger]').first().click();
+  await page.waitForTimeout(500);
+  const expanded = await page.locator('[data-shadcn_collapsible_content]').first()
+    .evaluate((el) => el.getBoundingClientRect().height);
+  check('collapsible opens its content and tells Python about it',
+    collapsed === 0 && expanded > 0 && await waitForEvent('collapsible:True'),
+    { collapsed, expanded, probe: probeSnapshot });
+  await page.locator('[data-shadcn_collapsible_trigger]').first().click();
+  await page.waitForTimeout(400);
+
+  // ---- button group + empty-state round trips ------------------------------ #
+  await page.locator('button', { hasText: /^Week$/ }).first().click();
+  check('button group click reaches Python', await waitForEvent('group:week'), probeSnapshot);
+  await page.locator('button', { hasText: /^Fit$/ }).first().click();
+  check('button group text/separator row click reaches Python', await waitForEvent('group:fit'), probeSnapshot);
+  await page.locator('button', { hasText: /Create project/ }).first().click();
+  check('empty-state action reaches Python', await waitForEvent('empty:create'), probeSnapshot);
+  await page.locator('[data-slot="item-actions"] button').first().click();
+  check('item action reaches Python', await waitForEvent('item:open'), probeSnapshot);
+
+  // ---- sheet / drawer ------------------------------------------------------ #
+  await page.locator('button', { hasText: /Open sheet/ }).first().click();
+  await page.waitForTimeout(600);
+  const sheet = page.locator('[data-shadcn_sheet_content]').first();
+  const sheetText = await sheet.innerText().catch(() => '');
+  check('sheet opens as a side panel with its title and description',
+    await sheet.isVisible().catch(() => false) && /Edit settings/.test(sheetText)
+      && /Changes apply immediately/.test(sheetText) && await waitForEvent('sheet:True'),
+    sheetText.replace(/\s+/g, ' ').slice(0, 80));
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(600);
+  check('sheet closes on Escape and reports it back',
+    !(await sheet.isVisible().catch(() => false)) && await waitForEvent('sheet:False'), probeSnapshot);
+
+  await page.locator('button', { hasText: /Open drawer/ }).first().click();
+  await page.waitForTimeout(700);
+  const drawer = page.locator('[data-shadcn_drawer_content]').first();
+  check('drawer slides in from the bottom edge',
+    await drawer.isVisible().catch(() => false)
+      && (await drawer.evaluate((el) => getComputedStyle(el).bottom)) === '0px'
+      && await waitForEvent('drawer:True'),
+    await drawer.evaluate((el) => el.className).catch(() => ''));
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(600);
+  check('drawer closes on Escape and reports it back',
+    !(await drawer.isVisible().catch(() => false)) && await waitForEvent('drawer:False'), probeSnapshot);
+
+  // ---- alert dialog -------------------------------------------------------- #
+  await page.locator('button', { hasText: /Delete project/ }).first().click();
+  await page.waitForTimeout(600);
+  const alertPanel = page.locator('[data-shadcn_alert_dialog_content]').first();
+  const alertText = await alertPanel.innerText().catch(() => '');
+  check('alert dialog is a modal alertdialog with its title and description',
+    await alertPanel.isVisible().catch(() => false)
+      && await alertPanel.getAttribute('role') === 'alertdialog'
+      && /Delete project\?/.test(alertText) && /cannot be undone/.test(alertText),
+    alertText.replace(/\s+/g, ' ').slice(0, 80));
+  await page.locator('button', { hasText: /^Cancel$/ }).first().click();
+  await page.waitForTimeout(500);
+  check('alert dialog cancel dismisses it', !(await alertPanel.isVisible().catch(() => false)), null);
+
+  await page.locator('button', { hasText: /Delete project/ }).first().click();
+  await page.waitForTimeout(500);
+  await page.locator('button', { hasText: /^Delete$/ }).first().click();
+  const alertRan = await waitForEvent('alert:delete');
+  await page.waitForTimeout(600);
+  check('alert dialog action runs its Python handler before closing',
+    alertRan && !(await alertPanel.isVisible().catch(() => false)),
+    { probe: probeSnapshot, visible: await alertPanel.isVisible().catch(() => false) });
+
+  // ---- context menu -------------------------------------------------------- #
+  await page.locator('[data-shadcn_context_menu_trigger]').first().click({ button: 'right' });
+  await page.waitForTimeout(700);
+  const ctx = page.locator('[data-shadcn_context_menu]').first();
+  const ctxItems = await page.locator('[data-shadcn_context_menu] [role="menuitem"]').allInnerTexts().catch(() => []);
+  check('context menu opens on right-click only when it is asked to',
+    await ctx.isVisible().catch(() => false) && ctxItems.map((t) => t.trim()).join(',') === 'Copy,Cut,Delete',
+    ctxItems);
+  await page.locator('[data-shadcn_context_menu] [role="menuitem"]', { hasText: /^Copy$/ }).first().click();
+  check('context menu selection reaches Python', await waitForEvent('context:copy'), probeSnapshot);
+
+  // ---- hover card ---------------------------------------------------------- #
+  await page.locator('button', { hasText: /^@nicegui$/ }).first().hover();
+  await page.waitForTimeout(1200);
+  const hoverCard = page.locator('[data-shadcn_hover_card_content]').first();
+  const hoverText = await hoverCard.innerText().catch(() => '');
+  check('hover card appears on hover with its content',
+    await hoverCard.isVisible().catch(() => false) && /NiceGUI/.test(hoverText)
+      && (await hoverCard.evaluate((el) => getComputedStyle(el).backgroundColor)) === await resolve(page, 'var(--popover)'),
+    hoverText.replace(/\s+/g, ' ').slice(0, 60));
+  await page.mouse.move(0, 0);
+  await page.waitForTimeout(600);
+
+  // ---- toast --------------------------------------------------------------- #
+  await page.locator('button', { hasText: /Show toast/ }).first().click();
+  await page.waitForTimeout(800);
+  const toast = page.locator('[data-shadcn_toast]').first();
+  const toastText = await toast.innerText().catch(() => '');
+  check('toast opens on the Python `.open()` call with title and description',
+    await toast.isVisible().catch(() => false) && /Deployment queued/.test(toastText)
+      && /email you when it is live/.test(toastText) && await waitForEvent('toast:open'),
+    toastText.replace(/\s+/g, ' ').slice(0, 70));
+  const viewport = await page.evaluate(() => {
+    const el = [...document.querySelectorAll('div,ol,ul')]
+      .find((d) => (d.className ?? '').includes('max-h-screen') && getComputedStyle(d).position === 'fixed');
+    return el ? { z: getComputedStyle(el).zIndex, bottom: getComputedStyle(el).bottom, right: getComputedStyle(el).right } : null;
+  });
+  check('toast provider pins the viewport to the requested corner',
+    viewport !== null && viewport.z === '50' && viewport.bottom === '0px' && viewport.right === '0px', viewport);
+
+  // ---- pagination / native select round trips ------------------------------ #
+  await page.locator('[data-shadcn_pagination_next]').first().click();
+  await page.waitForTimeout(500);
+  check('pagination next page reaches Python and moves the marker',
+    await waitForEvent('page:4')
+      && (await page.locator('[data-shadcn_pagination] [aria-current="page"]').innerText()) === '4',
+    probeSnapshot);
+  await page.locator('[data-shadcn_native_select] select').selectOption('scale');
+  await page.waitForTimeout(600);
+  check('native select change reaches Python',
+    await waitForEvent('native:scale')
+      && (await page.locator('[data-shadcn_native_select] select').inputValue()) === 'scale',
+    probeSnapshot);
+
+  // ---- calendar / date picker ---------------------------------------------- #
+  const calendar = await page.evaluate(() => {
+    const cal = document.querySelector('[data-shadcn_calendar]');
+    if (!cal) return null;
+    const cells = [...cal.querySelectorAll('[data-reka-calendar-cell-trigger]')];
+    return {
+      heading: [...cal.querySelectorAll('*')].map((e) => e.textContent.trim()).find((t) => /^[A-Z][a-z]+ \d{4}$/.test(t)) ?? null,
+      cells: cells.length,
+      selected: cells.filter((c) => c.getAttribute('data-selected') === 'true').map((c) => c.getAttribute('data-value')),
+      labelled: cells.filter((c) => (c.getAttribute('aria-label') ?? '').length > 0).length,
+    };
+  });
+  check('calendar renders a labelled month grid with the Python date selected',
+    calendar !== null && calendar.cells === 35 && calendar.selected.join(',') === '2026-03-15'
+      && calendar.labelled === 35,
+    calendar);
+  await page.locator('[data-shadcn_calendar] [data-reka-calendar-cell-trigger][data-value="2026-03-10"]').first().click();
+  await page.waitForTimeout(600);
+  check('picking a calendar day reaches Python and moves the selection',
+    await waitForEvent('calendar:2026-03-10')
+      && (await page.evaluate(() => document.querySelector('[data-shadcn_calendar] [data-selected="true"]')?.getAttribute('data-value'))) === '2026-03-10',
+    probeSnapshot);
+
+  const dateTrigger = page.locator('button', { hasText: /2026/ }).first();
+  check('date picker formats the Python date in its trigger',
+    (await dateTrigger.innerText()).trim() === 'March 15, 2026', await dateTrigger.innerText());
+  await dateTrigger.click();
+  await page.waitForTimeout(600);
+  const datePopover = page.locator('[data-shadcn_popover_content]').first();
+  check('date picker opens a popover holding a calendar',
+    await datePopover.isVisible().catch(() => false)
+      && await page.locator('[data-shadcn_popover_content] [data-shadcn_calendar]').count() === 1,
+    await page.locator('[data-shadcn_popover_content] [data-reka-calendar-cell-trigger]').count());
+  await page.locator('[data-shadcn_popover_content] [data-reka-calendar-cell-trigger][data-value="2026-03-20"]').first().click();
+  await page.waitForTimeout(700);
+  check('date picker reports the picked date to Python and rewrites its trigger',
+    await waitForEvent('date:2026-03-20')
+      && (await dateTrigger.innerText()).trim() === 'March 20, 2026'
+      && !(await datePopover.isVisible().catch(() => false)),
+    { probe: probeSnapshot, trigger: await dateTrigger.innerText() });
+
+  // ---- input OTP ------------------------------------------------------------ #
+  const otp = await page.evaluate(() => {
+    const root = document.querySelector('[data-shadcn_input_otp]');
+    if (!root) return null;
+    const input = root.querySelector('input');
+    return {
+      inputs: root.querySelectorAll('input').length,
+      value: input?.value,
+      maxlength: input?.getAttribute('maxlength'),
+      aria: input?.getAttribute('aria-label'),
+      slots: root.querySelectorAll('[data-slot="input-otp-slot"]').length,
+      separators: root.querySelectorAll('[data-slot="input-otp-separator"]').length,
+    };
+  });
+  check('input OTP renders one hidden input, six slots and a group separator',
+    otp !== null && otp.inputs === 1 && otp.value === '123456' && otp.maxlength === '6'
+      && otp.aria === 'One-time password' && otp.slots === 6 && otp.separators === 1,
+    otp);
+  await page.locator('[data-shadcn_input_otp] input').fill('654321');
+  await page.waitForTimeout(700);
+  check('typing into the OTP slots reaches Python',
+    await waitForEvent('otp:654321')
+      && (await page.locator('[data-shadcn_input_otp] input').inputValue()) === '654321',
+    probeSnapshot);
+
+  // ---- command palette ------------------------------------------------------ #
+  const command = await page.evaluate(() => {
+    const cmd = document.querySelector('[data-shadcn_command]');
+    if (!cmd) return null;
+    const input = cmd.querySelector('input');
+    return {
+      role: input?.getAttribute('role'),
+      placeholder: input?.getAttribute('placeholder'),
+      listbox: cmd.querySelectorAll('[role="listbox"]').length,
+      options: [...cmd.querySelectorAll('[role="option"]')].map((o) => o.textContent.trim()),
+      disabled: cmd.querySelectorAll('[role="option"][aria-disabled="true"]').length,
+      shortcuts: [...cmd.querySelectorAll('span')].filter((s) => s.textContent.trim() === '⌘K').length,
+    };
+  });
+  check('command palette renders a labelled listbox with grouped entries',
+    command !== null && command.role === 'combobox'
+      && command.placeholder === 'Type a command or search...'
+      && command.listbox === 1 && command.options.length === 4 && command.disabled === 1
+      && command.shortcuts === 1,
+    command);
+  await page.locator('[data-shadcn_command] [role="option"]').first().click();
+  check('command palette selection reaches Python', await waitForEvent('command:calendar'), probeSnapshot);
+
+  // ---- combobox -------------------------------------------------------------- #
+  const comboTrigger = page.locator('[data-shadcn_combobox] button').first();
+  check('combobox trigger is a collapsed combobox showing the Python value',
+    await comboTrigger.getAttribute('role') === 'combobox'
+      && await comboTrigger.getAttribute('data-state') === 'closed'
+      && (await comboTrigger.innerText()).trim() === 'Next.js',
+    await comboTrigger.innerText());
+  await comboTrigger.click();
+  await page.waitForTimeout(500);
+  const comboPanel = await page.evaluate(() => {
+    const root = document.querySelector('[data-shadcn_combobox]');
+    return {
+      expanded: root.querySelector('button')?.getAttribute('aria-expanded'),
+      listbox: root.querySelectorAll('[role="listbox"]').length,
+      search: root.querySelector('[role="listbox"] input')?.getAttribute('placeholder'),
+      options: [...root.querySelectorAll('[role="option"]')].map((o) => o.textContent.trim()),
+      selected: [...root.querySelectorAll('[role="option"]')]
+        .filter((o) => o.getAttribute('data-selected') === 'true').length,
+    };
+  });
+  check('combobox opens a filterable listbox with the current option marked',
+    comboPanel.expanded === 'true' && comboPanel.listbox === 1 && comboPanel.search === 'Search...'
+      && comboPanel.options.join(',') === 'Next.js,SvelteKit,Nuxt.js' && comboPanel.selected === 1,
+    comboPanel);
+  await page.locator('[data-shadcn_combobox] [role="option"]', { hasText: /^SvelteKit$/ }).first().click();
+  await page.waitForTimeout(600);
+  check('combobox selection reaches Python and updates the trigger',
+    await waitForEvent('combobox:svelte') && (await comboTrigger.innerText()).trim() === 'SvelteKit',
+    probeSnapshot);
+
+  // ---- menubar --------------------------------------------------------------- #
+  const menubar = await page.evaluate(() => {
+    const bar = document.querySelector('[data-shadcn_menubar]');
+    return bar ? {
+      triggers: [...bar.querySelectorAll('button')].map((b) => b.textContent.trim()),
+      state: [...bar.querySelectorAll('button')].map((b) => b.getAttribute('data-state')),
+    } : null;
+  });
+  check('menubar renders one trigger per menu with none of them open',
+    menubar !== null && menubar.triggers.join(',') === 'File,Edit'
+      && menubar.state.every((s) => s === 'closed'),
+    menubar);
+  await page.locator('[data-shadcn_menubar] button', { hasText: /^File$/ }).first().click();
+  await page.waitForTimeout(600);
+  const fileItems = await page.locator('[role="menuitem"]').allInnerTexts().catch(() => []);
+  check('menubar opens its panel with the items passed from Python',
+    fileItems.map((t) => t.trim()).filter((t) => ['New', 'Open', 'Quit'].includes(t)).length === 3,
+    fileItems);
+  await page.locator('[role="menuitem"]', { hasText: /^New$/ }).first().click();
+  check('menubar selection reaches Python', await waitForEvent('menubar:new'), probeSnapshot);
+
+  // ---- navigation menu --------------------------------------------------------- #
+  const navMenu = await page.evaluate(() => {
+    const root = document.querySelector('[data-shadcn_navigation_menu]');
+    if (!root) return null;
+    return {
+      orientation: root.getAttribute('data-orientation'),
+      topLevel: root.querySelectorAll('ul > li').length,
+      triggers: [...root.querySelectorAll('[data-navigation-menu-trigger]')].map((b) => b.textContent.trim()),
+      links: [...root.querySelectorAll('a')].map((a) => a.textContent.trim()),
+      // reka renders the panel lazily; a `data-reka-navigation-menu-content`
+      // attribute is NOT emitted, so the panel is located through the trigger's
+      // aria-controls instead of a guessed attribute.
+      controls: root.querySelector('[data-navigation-menu-trigger]')?.getAttribute('aria-controls') ?? null,
+    };
+  });
+  check('navigation menu renders top-level triggers and direct links',
+    navMenu !== null && navMenu.orientation === 'horizontal' && navMenu.topLevel === 2
+      && navMenu.triggers.join(',') === 'Getting started' && navMenu.links.join(',') === 'Components'
+      && navMenu.controls !== null,
+    navMenu);
+  await page.locator('[data-shadcn_navigation_menu] [data-navigation-menu-trigger]').first().click();
+  await page.waitForTimeout(700);
+  const navPanel = await page.evaluate((id) => {
+    const root = document.querySelector('[data-shadcn_navigation_menu]');
+    const panel = [...root.querySelectorAll('ul')].find((u) => u.textContent.includes('Introduction'));
+    return panel ? {
+      matchesControls: panel.closest('[id]')?.id === id || panel.id === id,
+      entries: [...panel.querySelectorAll('a')].map((a) => a.textContent.trim()),
+      descriptions: [...panel.querySelectorAll('span')].filter((s) => /works|project|Add the/.test(s.textContent)).length,
+      visible: panel.getBoundingClientRect().height > 0,
+    } : null;
+  }, navMenu.controls);
+  check('navigation menu reveals a described panel on click',
+    navPanel !== null && navPanel.visible && navPanel.entries.length === 2
+      && navPanel.entries[0].replace(/\s+/g, '').startsWith('IntroductionHowthelibraryworks.')
+      && navPanel.entries[1].replace(/\s+/g, '').startsWith('InstallationAddthepackagetoyourproject.')
+      && navPanel.descriptions === 2 && navPanel.matchesControls,
+    navPanel);
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(400);
+
+  check('no console/page errors after all interactions',
+    consoleErrors.length === 0, consoleErrors.slice(0, 5));
 
   // ---- light / dark ----------------------------------------------------- #
   await page.screenshot({ path: `${OUT_DIR}/_shot-light.png`, fullPage: true });

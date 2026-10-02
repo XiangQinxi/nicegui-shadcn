@@ -1,8 +1,13 @@
 # 浮层
 
-浮层这一组有四个成员：`dialog`（对话框 / sheet 面板）、`popover`（气泡面板）、`dropdown_menu`
-（下拉菜单）与 `tooltip`（提示气泡）。它们共享同一套结构：一个**常驻的 root** 保存打开状态，
-一个可选的 **trigger** 负责切换，以及一份被 `Teleport` 挂到 `<body>` 的 **content**。
+浮层这一组覆盖了所有「按需出现的东西」：`dialog`（对话框）、`sheet`（侧边面板）、`drawer`
+（底部抽屉）、`popover`（气泡面板）、`dropdown_menu`（下拉菜单）、`hover_card`（悬停卡片）、
+`alert_dialog`（确认对话框）、`tooltip`（提示气泡），以及不依附于触发器的 `toast`（通知）。
+菜单类浮层（`menubar`、`navigation_menu`、`command`）以及同样按数据驱动渲染的
+`context_menu` 在 {doc}`menus` 里单独展开。
+
+它们的共同结构是：一个**常驻的 root** 保存打开状态，一个可选的 **trigger** 负责切换，以及
+一份被 `Teleport` 挂到 `<body>` 的 **content**。
 
 ## 触发器的配对规则
 
@@ -181,7 +186,146 @@ tooltip 只响应悬停与键盘焦点，不响应点击。用它来解释图标
 配合 `shadcn.button('Delete', icon='trash-2', size='icon')` 这种只有图标的按钮尤其必要。
 :::
 
+## sheet 与 drawer
+
+`sheet` 与 `drawer` 都是「从屏幕边缘滑出的 dialog」，共用 `_Openable` 的
+`open()` / `close()` / `toggle()`，区别只在默认滑入的边和面板的形态：
+
+```python
+with shadcn.sheet() as sheet:
+    shadcn.sheet_trigger('打开设置')
+    with shadcn.sheet_content(title='编辑设置',
+                              description='改动立即生效。',
+                              side='right'):
+        shadcn.input(placeholder='工作区名称').classes('w-full')
+        with shadcn.sheet_footer():
+            shadcn.button('保存', icon='check', on_click=sheet.close)
+```
+
+| 工厂函数 | 位置参数 | 关键字参数 |
+| --- | --- | --- |
+| `shadcn.sheet` | — | `value`、`on_change` |
+| `shadcn.sheet_trigger` | `text` | `as_child`、`on_click` |
+| `shadcn.sheet_content` | `title` | `description`、`side`、`closable`、`aria_label` |
+| `shadcn.sheet_footer` | — | — |
+
+```python
+with shadcn.drawer() as drawer:
+    shadcn.drawer_trigger('快速操作')
+    with shadcn.drawer_content(title='快速操作', side='bottom'):
+        shadcn.muted('向下滑动即可关闭。')
+        with shadcn.drawer_footer():
+            shadcn.button('完成', variant='outline', on_click=drawer.close)
+```
+
+| 参数 | 适用 | 说明 |
+| --- | --- | --- |
+| `side` | `sheet` 为 `'right'`；`drawer` 为 `'bottom'` | 从哪条边滑入 |
+| `modal` | `drawer` | 默认 `True`，置 `False` 时打开期间仍可操作背景 |
+| `snap_points` / `snap_point` | `drawer` | 抽屉可以停留的高度（如 `[0.25, 0.6]`）与初始停留点 |
+
+`sheet_content(side=…)` 与 `drawer_content(side=…)` 的取值要和外层 root 的默认边保持一致，
+否则面板的圆角与滑动方向会对不上。
+
+:::{warning}
+`sheet_trigger` / `drawer_trigger` 和 `dialog_trigger` 一样，**没有** `variant` / `size`
+参数 —— 它们本身就渲染成 outline 按钮。
+:::
+
+## hover_card
+
+`hover_card` 在鼠标悬停（或键盘聚焦）时弹出一张卡片，适合做用户资料卡、术语解释：
+
+```python
+with shadcn.hover_card():
+    with shadcn.hover_card_trigger():
+        shadcn.button('@nicegui', variant='link')
+    with shadcn.hover_card_content():
+        with ui.column().classes('gap-1'):
+            shadcn.large('NiceGUI')
+            shadcn.muted('用 Python 构建 Web 界面。')
+```
+
+| 参数 | 默认值 | 说明 |
+| --- | --- | --- |
+| `value` | `None` | `None` 表示完全交给悬停；`True` / `False` 可强制卡片常开或常关 |
+| `open_delay` | `200` | 悬停多少毫秒后打开 |
+| `close_delay` | `150` | 指针离开后多少毫秒关闭 |
+| `side` / `align` | `'bottom'` / `'center'` | `hover_card_content` 的弹出方位 |
+
+`hover_card_trigger(as_child=True)` 是**默认值**（和别的触发器相反），所以里面直接放一个
+元素即可，不必传 `as_child`。
+
+## alert_dialog
+
+`alert_dialog` 是「必须回答才能继续」的确认框：它锁住背景、没有右上角关闭按钮、也不会被
+遮罩点击关掉，只能通过 action 或 cancel 结束：
+
+```python
+with shadcn.alert_dialog() as confirm:
+    shadcn.alert_dialog_trigger('删除项目')
+    with shadcn.alert_dialog_content(title='确定要删除项目吗？',
+                                     description='此操作不可撤销。'):
+        with shadcn.alert_dialog_footer():
+            shadcn.alert_dialog_cancel('取消')
+            shadcn.alert_dialog_action('删除', on_click=confirm.close)
+```
+
+| 工厂函数 | 位置参数 | 关键字参数 |
+| --- | --- | --- |
+| `shadcn.alert_dialog` | — | `value`、`on_change` |
+| `shadcn.alert_dialog_trigger` | `text` | `as_child`、`on_click` |
+| `shadcn.alert_dialog_content` | `title` | `description`、`aria_label` |
+| `shadcn.alert_dialog_action` | `text` | `on_click` |
+| `shadcn.alert_dialog_cancel` | `text` | `on_click` |
+| `shadcn.alert_dialog_footer` | — | — |
+
+`alert_dialog_content` **没有** `side` / `closable` —— 它是不可轻率关闭的，也不做 sheet
+形态。`action` 与 `cancel` 渲染成两个扁平按钮，各自只额外接受 `on_click`，其中 `action` 的
+回调会在关闭动画之前执行：想「先弹确认再执行」时，把业务逻辑写在 `on_click` 里即可。
+
+## toast
+
+`toast` 不依附于触发器，它挂在一个 **provider** 上，由服务端随时 `open()`：
+
+```python
+from nicegui import ui
+from nicegui_shadcn import shadcn
+
+with shadcn.toast_provider(position='bottom-right', duration=5000):
+    saved = shadcn.toast('部署已排队',
+                         description='上线后我们会邮件通知你。',
+                         duration=60000)
+    shadcn.button('显示通知', variant='outline', on_click=saved.open)
+```
+
+| 参数 | 默认值 | 说明 |
+| --- | --- | --- |
+| `title` | `''` | 位置参数，粗体第一行 |
+| `value` | `False` | 是否一开始就可见 |
+| `description` | `''` | 标题下方的次级说明 |
+| `variant` | `'default'` | `default` / `destructive` / `success` |
+| `duration` | `None` | 多少毫秒后自动关闭；`0` 表示不自动关闭 |
+| `closable` | `True` | 是否显示关闭按钮 |
+
+`toast_provider` 决定这一组通知的位置与默认时长：
+
+| 参数 | 默认值 | 说明 |
+| --- | --- | --- |
+| `position` | `'bottom-right'` | 通知堆叠的角落 |
+| `duration` | `5000` | 默认停留毫秒数，`0` 表示常驻 |
+| `swipe_direction` | `'right'` | 可以朝哪个方向把通知划走 |
+
+`toast` 同样是 `_Openable`，`open()` / `close()` / `toggle()` 与 `value` 都可以用，所以也能
+写成 `shadcn.toast('已保存', value=True)` 直接在页面加载时弹出。
+
+:::{tip}
+一个页面可以放多个 `toast_provider`，例如左下角放提示、右上角放错误。同一个 provider 里的
+通知会按打开顺序堆叠。
+:::
+
 ## 下一步
 
+- {doc}`menus` —— menubar、navigation_menu、command 与 context_menu。
 - {doc}`disclosure` —— tabs 与 accordion，另一种**非** portal 的“按需显示”。
 - {doc}`limitations` —— 已挂载内容与 `hidden` 属性的取舍。

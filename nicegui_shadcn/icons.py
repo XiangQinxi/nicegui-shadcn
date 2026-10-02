@@ -12,7 +12,7 @@ utilities.
 
 from __future__ import annotations
 
-__all__ = ['ICON_NAMES', 'svg']
+__all__ = ['ICON_NAMES', 'glyph', 'svg']
 
 _ICONS: dict[str, str] = {
     'arrow-left': '<path d="m12 19-7-7 7-7"/><path d="M19 12H5"/>',
@@ -85,6 +85,20 @@ _ICONS: dict[str, str] = {
 }
 
 ICON_NAMES = tuple(sorted(_ICONS))
+
+
+def glyph(name: str) -> str:
+    """Return the inner SVG markup of a Lucide icon.
+
+    For components that need an ``<svg>`` of their own -- one with a ``role`` or a
+    different set of attributes than :func:`svg` hard-codes.
+
+    :param name: icon name, e.g. ``'check'`` (see :data:`ICON_NAMES`)
+    """
+    try:
+        return _ICONS[name]
+    except KeyError:
+        raise KeyError(f'unknown icon {name!r}; available: {", ".join(ICON_NAMES)}') from None
 
 
 def svg(name: str, *, size: int | float = 16, stroke_width: float = 2, classes: str = '', **attrs: object) -> str:

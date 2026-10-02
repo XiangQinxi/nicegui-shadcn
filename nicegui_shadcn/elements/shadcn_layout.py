@@ -12,7 +12,6 @@ from typing import Any
 
 from nicegui.elements.mixins.text_element import TextElement
 
-from .._tw_merge import tw_join
 from .base import ShadcnElement, option
 
 __all__ = [

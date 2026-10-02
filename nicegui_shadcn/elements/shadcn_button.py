@@ -50,6 +50,17 @@ _SIZES = {
 }
 
 
+def button_classes(variant: str = 'default', size: str = 'default') -> str:
+    """Compose the standard button styling, for elements that render as a button.
+
+    Triggers, menu entries and confirmation buttons are all ``<button>`` elements
+    that reka-ui renders for us, so they cannot subclass :class:`Button`; they
+    borrow its tables instead. Deliberately not in ``__all__`` — it is internal
+    plumbing, not a component.
+    """
+    return tw_join(_BASE, option('button variant', variant, _VARIANTS), option('button size', size, _SIZES))
+
+
 class Button(ShadcnElement, default_classes=_BASE):
     """A shadcn/ui button.
 

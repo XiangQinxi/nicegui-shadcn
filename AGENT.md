@@ -22,9 +22,9 @@ package, so importing `nicegui_shadcn` never reads a `.css` or a `.js` source fi
 | `nicegui_shadcn/*.py` | Runtime: `theme.py`, `theming.py`, `shadcn.py`, `icons.py`, `_tw_merge.py` | wheel + sdist |
 | `nicegui_shadcn/elements/*.py` | Runtime: one module per component group | wheel + sdist |
 | `nicegui_shadcn/elements/*.vue` | Runtime: templates, parsed by NiceGUI's own `VBuild` | wheel + sdist |
-| `nicegui_shadcn/static/shadcn.css` | Runtime: compiled stylesheet (~191 kB) | wheel + sdist |
+| `nicegui_shadcn/static/shadcn.css` | Runtime: compiled stylesheet (~201 kB) | wheel + sdist |
 | `nicegui_shadcn/static/base-colors.json` | Runtime: shadcn's 7 base palettes (`cssVarsV4`), generated | wheel + sdist |
-| `nicegui_shadcn/static/vendor/reka-ui.js` | Runtime: tree-shaken reka-ui bundle (~283 kB) | wheel + sdist |
+| `nicegui_shadcn/static/vendor/reka-ui.js` | Runtime: tree-shaken reka-ui bundle (~381 kB) | wheel + sdist |
 | `frontend/tailwind.css` | **Build input**: Tailwind v4 source, design tokens, `@source` globs | sdist |
 | `frontend/vendor/reka-entry.js` | **Build input**: esbuild entry for the reka-ui bundle | sdist |
 | `examples/demo.py` | **Build input + dev aid**: the demo the browser test drives | sdist |
@@ -53,8 +53,8 @@ Then verify, in this order — each layer catches what the one before it cannot:
 
 ```bash
 python tests/test_tw_merge.py     # 62 cases: cn() conflict resolution, no NiceGUI needed
-python tests/test_render.py       # 30 checks: every component renders server-side, no browser
-python tests/audit_classes.py     # 223 tokens: every class used in Python exists in the CSS
+python tests/test_render.py       # 61 checks: every component renders server-side, no browser
+python tests/audit_classes.py     # 395 tokens: every class used in Python exists in the CSS
 python tests/check_examples.py    # every Markdown sample binds to a real signature
 python tests/check_readme.py      # README.md and README_zh.md: blocks identical, anchors live
 python tests/test_theming.py      # 85 checks: base-colour registry, radius ladder, injection
@@ -169,6 +169,18 @@ Two consequences:
   (`client.py:347-349` unwraps `len(args) == 1`).
 - `ValueElement` uses `VALUE_PROP = 'model-value'`; set `LOOPBACK = False` when the
   component writes the value back itself (see `shadcn_form.py`).
+- **`LOOPBACK = False` hands the client an *array*.** `static/nicegui.js:262` defines
+  `const emit = (...args) =>…`, and `:275-277` does
+  `if (element.props["loopback"] === False && event.type == "update:modelValue") element.props["model-value"] = args;`
+  — `args` is the rest array, so after the first client-side change `modelValue` is
+  `['5']` rather than `'5'`. Any component that then does `this.modelValue.length`,
+  `this.modelValue[index]` or `parseDate(this.modelValue)` silently misbehaves (the OTP
+  field drew one dot instead of four; the calendar lost its selection). NiceGUI's own
+  value elements dodge this because they use `VALUE_PROP = 'value'`
+  (`nicegui/elements/input.py:12`), so the branch never matches. Every shadcn template
+  that sets `LOOPBACK = False` therefore unwraps first, with a `currentValue` computed —
+  see `shadcn_input.vue`, `shadcn_textarea.vue`, `shadcn_input_otp.vue` and the
+  `toDate()` guard in `shadcn_calendar.vue`.
 - **Declare every prop you pass.** An undeclared prop falls through to the DOM; NiceGUI's
   own `loopback` prop once leaked onto the select trigger as `<button loopback="true">`
   until `shadcn_select.vue` declared it.
@@ -278,7 +290,7 @@ carry instead are the classes of their *internal* structure: the thumb of a slid
 icon of a checkbox, the frame of a portaled panel. That split is what makes `classes=`
 mergeable and auditable.
 
-So the rule is about *where* a class lives, not about the count: 12 of the 24 templates do
+So the rule is about *where* a class lives, not about the count: 12 of the 54 templates do
 contain literal `class="…"` — 36 attributes in total at the time of writing, 7 of them in
 `shadcn_select.vue` alone. Those sit on elements the caller never addresses. A literal class
 on the **root**, on the other hand, competes with `default_classes` and with the caller's
@@ -397,8 +409,9 @@ looked at the result.
    `oklch()` back unchanged, so the test proves *which token* was used rather than that some
    dark colour appeared.
 6. **`Button` has no `.vue`.** It renders a native `<button>` (`tag='button'`). Asserting
-   `tpl-shadcn_button` is wrong; the repository has exactly 24 `.vue` files, which is why
-   `test_render.py` has 30 checks (6 static + 24).
+   `tpl-shadcn_button` is wrong; `test_render.py` derives one `<stem> registered` check per
+   `*.vue` file, so its check count tracks the number of templates (61 at the time of
+   writing: 6 static + the per-template checks).
 7. **NiceGUI 3.x removed `classes=` / `style=` / `props=` from `Element.__init__`.** Set them
    through `_props` / `.classes()` / `.style()` after construction, as `base.py` does.
 8. **`add_slot('default', template)` cannot inject markup.** `_collect_slot_dict()` excludes

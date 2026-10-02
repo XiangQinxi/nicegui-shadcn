@@ -19,15 +19,18 @@
 | `docs/`（Sphinx 源；`docs/_build/` 除外） | ❌ | ✅ |
 | `poetry.lock`、`dist/` | ❌ | ❌ |
 
-仓库里现成的 0.1.2 产物可以直接核对：
+仓库里现成的 0.1.3 产物可以直接核对：
 
 ```
-dist/nicegui_shadcn-0.1.2-py3-none-any.whl    168,622 B   49 个条目
-dist/nicegui_shadcn-0.1.2.tar.gz              544,174 B   91 个文件
+dist/nicegui_shadcn-0.1.3-py3-none-any.whl    276,559 B   102 个条目
+dist/nicegui_shadcn-0.1.3.tar.gz              ~1.3 MB     147 个文件
 ```
 
-wheel 里只有 `nicegui_shadcn/` 下的 45 个文件，加上 `dist-info/licenses/LICENSE`、
-`METADATA`、`WHEEL`、`RECORD`。
+sdist 里有大约 900 kB 是 `docs/` 下的两张演示截图，属于正常现象——它们要跟着源码分发一起走，
+Sphinx 构建时才用得上。
+
+wheel 里只有 `nicegui_shadcn/` 下的 98 个文件 —— 41 个 `.py`、54 个 `.vue`、两个预构建资源和
+`base-colors.json` —— 加上 `dist-info/licenses/LICENSE`、`METADATA`、`WHEEL`、`RECORD`。
 
 ## `pyproject.toml` 的打包规则
 
@@ -116,9 +119,9 @@ requires-python = ">=3.10,<4.0"
 
 | 位置 | 内容 |
 | --- | --- |
-| `pyproject.toml:3` | `version = "0.1.2"` |
-| `nicegui_shadcn/__init__.py:57` | `__version__ = '0.1.2'` |
-| `package.json:3` | `"version": "0.1.2"` |
+| `pyproject.toml:3` | `version = "0.1.3"` |
+| `nicegui_shadcn/__init__.py:57` | `__version__ = '0.1.3'` |
+| `package.json:3` | `"version": "0.1.3"` |
 
 第三处容易被忘：它是 npm 侧的构建工具链版本，虽然 `private: true` 不会发布到 npm，
 但 `npm run build` 的产物与它绑定，版本漂移会让「这个 CSS 是哪个版本编译的」变得不可考。
@@ -141,8 +144,8 @@ poetry build          # 同时产出 wheel 和 sdist 到 dist/
 然后**检查 `dist/` 的内容**，而不是只看构建成功：
 
 ```bash
-python -c "import zipfile;print('\n'.join(zipfile.ZipFile('dist/nicegui_shadcn-0.1.2-py3-none-any.whl').namelist()))"
-python -c "import tarfile;print('\n'.join(tarfile.open('dist/nicegui_shadcn-0.1.2.tar.gz').getnames()))"
+python -c "import zipfile;print('\n'.join(zipfile.ZipFile('dist/nicegui_shadcn-0.1.3-py3-none-any.whl').namelist()))"
+python -c "import tarfile;print('\n'.join(tarfile.open('dist/nicegui_shadcn-0.1.3.tar.gz').getnames()))"
 ```
 
 要确认的是三件事：`.vue` 在 wheel 里、`static/` 三个文件（`shadcn.css`、`vendor/reka-ui.js`、
@@ -156,7 +159,7 @@ python -c "import tarfile;print('\n'.join(tarfile.open('dist/nicegui_shadcn-0.1.
 
 ```bash
 python -m venv /tmp/verify-shadcn
-/tmp/verify-shadcn/bin/python -m pip install dist/nicegui_shadcn-0.1.2-py3-none-any.whl
+/tmp/verify-shadcn/bin/python -m pip install dist/nicegui_shadcn-0.1.3-py3-none-any.whl
 ```
 
 ```bash

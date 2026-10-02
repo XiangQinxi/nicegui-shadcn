@@ -123,6 +123,35 @@ class ShadcnElement(Element):
         return self
 
 
+# ``Element.__init_subclass__`` copies ``component`` onto every subclass it creates. That
+# materialises ``component = None`` in this class's own ``__dict__``, and because
+# ``ShadcnElement`` is listed first in the bases of every component here, the copy shadows the
+# Vue component inherited from a *secondary* base such as ``Html``. The element then silently
+# degrades to a ``<div>`` with the props leaked as attributes -- no error, no warning.
+# Dropping the copy lets the normal MRO lookup find the real component again.
+del ShadcnElement.component
+
+
+class _Openable:
+    """Mixin giving an overlay element explicit ``open``/``close``/``toggle`` methods.
+
+    Not part of the public surface: it is mixed into the dialog-like elements so
+    that they can be driven from a callback as well as from a trigger.
+    """
+
+    def open(self) -> None:  # noqa: A003 - matches the DOM/ARIA vocabulary
+        """Show the overlay."""
+        self.set_value(True)  # type: ignore[attr-defined]
+
+    def close(self) -> None:
+        """Hide the overlay."""
+        self.set_value(False)  # type: ignore[attr-defined]
+
+    def toggle(self) -> None:
+        """Flip the overlay between shown and hidden."""
+        self.set_value(not self.value)  # type: ignore[attr-defined]
+
+
 class Text(TextElement):
     """A bare text element.
 

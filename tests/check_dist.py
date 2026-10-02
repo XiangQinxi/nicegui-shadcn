@@ -49,6 +49,7 @@ def main() -> int:
         names = z.namelist()
         meta = z.read(f'nicegui_shadcn-{current}.dist-info/METADATA').decode('utf-8')
         vue = [n for n in names if n.endswith('.vue')]
+        expected_vue = sorted(p.name for p in (ROOT / 'nicegui_shadcn' / 'elements').glob('*.vue'))
         assets = [
             'nicegui_shadcn/static/shadcn.css',
             'nicegui_shadcn/static/vendor/reka-ui.js',
@@ -57,7 +58,8 @@ def main() -> int:
         ]
 
         check(f'wheel METADATA version is {current}', f'Version: {current}' in meta)
-        check('wheel ships 24 .vue templates', len(vue) == 24, f'found {len(vue)}')
+        check(f'wheel ships all {len(expected_vue)} .vue templates',
+              sorted(Path(n).name for n in vue) == expected_vue, f'found {len(vue)}')
         for asset in assets:
             check(f'wheel ships {asset}', asset in names,
                   f'{z.getinfo(asset).file_size} bytes' if asset in names else 'MISSING')
