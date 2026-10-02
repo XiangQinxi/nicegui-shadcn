@@ -19,10 +19,11 @@ package, so importing `nicegui_shadcn` never reads a `.css` or a `.js` source fi
 
 | Path | Role | Ships in |
 | --- | --- | --- |
-| `nicegui_shadcn/*.py` | Runtime: `theme.py`, `shadcn.py`, `icons.py`, `_tw_merge.py` | wheel + sdist |
+| `nicegui_shadcn/*.py` | Runtime: `theme.py`, `theming.py`, `shadcn.py`, `icons.py`, `_tw_merge.py` | wheel + sdist |
 | `nicegui_shadcn/elements/*.py` | Runtime: one module per component group | wheel + sdist |
 | `nicegui_shadcn/elements/*.vue` | Runtime: templates, parsed by NiceGUI's own `VBuild` | wheel + sdist |
 | `nicegui_shadcn/static/shadcn.css` | Runtime: compiled stylesheet (~191 kB) | wheel + sdist |
+| `nicegui_shadcn/static/base-colors.json` | Runtime: shadcn's 7 base palettes (`cssVarsV4`), generated | wheel + sdist |
 | `nicegui_shadcn/static/vendor/reka-ui.js` | Runtime: tree-shaken reka-ui bundle (~283 kB) | wheel + sdist |
 | `frontend/tailwind.css` | **Build input**: Tailwind v4 source, design tokens, `@source` globs | sdist |
 | `frontend/vendor/reka-entry.js` | **Build input**: esbuild entry for the reka-ui bundle | sdist |
@@ -51,11 +52,15 @@ component that renders unstyled.
 Then verify, in this order — each layer catches what the one before it cannot:
 
 ```bash
-python tests/test_tw_merge.py     # 37 cases: cn() conflict resolution, no NiceGUI needed
+python tests/test_tw_merge.py     # 62 cases: cn() conflict resolution, no NiceGUI needed
 python tests/test_render.py       # 30 checks: every component renders server-side, no browser
 python tests/audit_classes.py     # 223 tokens: every class used in Python exists in the CSS
-python examples/demo.py           # start the demo (port 8123), then:
-node tests/visual_check.mjs http://127.0.0.1:8123/   # 34 checks in headless Edge
+python tests/check_examples.py    # every Markdown sample binds to a real signature
+python tests/check_readme.py      # README.md and README_zh.md: blocks identical, anchors live
+python tests/test_theming.py      # 85 checks: base-colour registry, radius ladder, injection
+python tests/check_dist.py        # wheel/sdist contents (skips until `poetry build` has run)
+python examples/demo.py           # start the demo (port 8080), then:
+node tests/visual_check.mjs http://127.0.0.1:8080/   # 34 checks in headless Edge
 ```
 
 - `tests/test_render.py` derives one `<stem> registered` check per `*.vue` file, so a new
@@ -66,6 +71,25 @@ node tests/visual_check.mjs http://127.0.0.1:8123/   # 34 checks in headless Edg
 - `tests/visual_check.mjs` asserts computed styles, so it is the only layer that can tell
   whether a design *token* — not merely a class name — reached the element. It writes
   `_shot-light.png` / `_shot-dark.png`; set `SHADCN_SHOT_DIR` to redirect them.
+- `tests/check_examples.py` is the only guard against a documentation sample that reads
+  plausibly and cannot run. It parses each ```python block with `ast` and binds every
+  `shadcn.*` / `icons.*` call against `inspect.signature`, so `shadcn.checkbox('terms',
+  value=True)` — which raises `TypeError`, because the first positional parameter is
+  `value` — fails the build. A sample that is *deliberately* wrong must be marked with a
+  trailing `# 错误` comment inside a `:::{warning}` block; those are skipped and counted.
+- `tests/check_readme.py` keeps the two hand-maintained READMEs in step: their fenced code
+  blocks must stay byte-identical (so the Chinese page cannot drift into a different API),
+  and every `](#anchor)` link must resolve under GitHub's slug rules.
+- `tests/test_theming.py` covers `nicegui_shadcn/theming.py`: that `base-colors.json` really
+  matches shadcn's registry, that the shipped `:root` block still equals the `neutral`
+  palette token for token, that every radius step follows `--radius`, and that the runtime
+  stylesheet is injected **once** rather than once per setter (`Client.shared_head_html`
+  is an append-only string; `theming._apply()` coalesces through `app.on_startup`).
+- `tests/check_dist.py` is the release gate: it reads the version out of `pyproject.toml`,
+  asserts the wheel carries the `.vue` templates and all four `static/` assets including
+  `base-colors.json`, and that the sdist carries `docs/` (but never `docs/_build/`). It
+  **skips** while `dist/` holds nothing for the current version, so run `poetry build` first
+  — and remember that bumping the version invalidates the previous artifacts, not the script.
 
 `examples/demo.py` runs with `reload=False`, so **restart it after every code change**
 otherwise the browser test checks the previous build.
@@ -110,6 +134,13 @@ component module carries its own `.vue` next to it.
 
 - The file **stem** is used as a raw JavaScript identifier (`import { default as NAME } from
   …`), so **no hyphens** — hence `shadcn_tabs_list.vue`, never `shadcn-tabs-list.vue`.
+- **No dots either**, and this one fails silently. NiceGUI derives a *dependency* name with
+  `path.name.split('.', 1)[0]` (`nicegui/dependencies.py:178-179`, called at `:110`), while
+  `VBuild` builds the `tpl-`/`data-` name from `filepath.stem` with dots replaced by hyphens
+  (`nicegui/vbuild.py:15-17`), and the import map then writes
+  `{name}.template = '#tpl-{name}'` (`nicegui/dependencies.py:223`). For
+  `shadcn_stat.chart.vue` the two disagree (`shadcn_stat` vs `shadcn_stat-chart`), the
+  `#tpl` id never resolves, and the component renders **empty** — with no error anywhere.
 - Stems must be **globally unique** across both `.vue` and `.js` components
   (`Component._names` is a shared `ClassVar` with an `assert`).
 - All components are prefixed `shadcn_` for that reason.
@@ -170,6 +201,31 @@ Keep `vue` **external** in the reka-ui bundle (`esbuild --external:vue`). NiceGU
 puts its own Vue 3.5 on the import map; a second copy breaks `provide`/`inject` and
 `Teleport` across components.
 
+### Runtime theming
+
+`theming.py` reuses the same hook but has to solve two extra problems, and both solutions
+depend on NiceGUI internals:
+
+1. **`Client.shared_head_html` is an append-only class string** (`client.py:59`, read back
+   per page at `client.py:138`), so a page that calls three setters would ship three copies
+   of the theme. `theming._apply()` therefore does nothing until NiceGUI starts: the first
+   pre-start call registers an `app.on_startup` handler (`app/app.py:127`), and `_flush()`
+   injects the *final* stylesheet once.
+2. **Open pages never see a new head block.** After startup every change is also replayed
+   over each connected client's websocket — `Client.run_javascript(code)`
+   (`client.py:228`) gated on `has_socket_connection`. That call ends up in
+   `background_tasks.create()`, which asserts a running loop (`background_tasks.py:41`), so
+   `_broadcast()` probes `asyncio.get_running_loop()` first and silently skips otherwise.
+
+`run_javascript` takes **bare JavaScript**: the `<script>` wrapper the head injection needs
+must be left off, or the browser reports `SyntaxError: Unexpected token '<'`. The snippet
+exists in both shapes for exactly this reason (`_BODY` vs `_REPLACE`).
+
+Generated utilities for a custom colour are wrapped in `@layer utilities { … }` and carry
+`!important`, because for `!important` declarations the layer order **reverses** — see
+below. Quasar ships its own `.bg-warning`, and an unlayered `!important` loses to every
+layered one.
+
 ---
 
 ## 4. Tailwind and the cascade
@@ -200,19 +256,44 @@ Everything we emit joins those layers.
   a **deliberate subset**: semantic colours plus common layout/spacing/typography. Raw
   palette colours (`bg-blue-600`) are not generated. Extending it means adding to the
   matrix and rebuilding; the README documents the user-facing workflow.
+- **`@source not "../nicegui_shadcn/theming.py";`** (right after the `*.py` glob) keeps the
+  theming module out of the class scan. Its constants and docstrings spell out token names
+  such as `accent-foreground` and `bg-warning`, which Tailwind cannot tell apart from a real
+  class: without the exclusion the build emits a bogus
+  `.accent-foreground { accent-color: var(--foreground) !important }`. If you add another
+  module that mentions class names in prose, exclude it the same way.
+- The radius ladder in `@theme inline` is shadcn's **proportional** one —
+  `--radius-xs/sm/md/lg/xl/2xl/3xl/4xl` = `calc(var(--radius) * 0.4/0.6/0.8/1/1.4/1.8/2.2/2.6)`.
+  It replaces the older `calc(var(--radius) - 4px)` style, which pinned the steps to absolute
+  offsets so `theming.set_radius()` could not reshape the interface. `xs` continues the ladder
+  downwards so the one component that uses it (the dialog close button) follows too; shadcn
+  itself publishes only `sm` upward. The **bare** `rounded` / `rounded-t` / `rounded-l`
+  utilities stay at Tailwind's inlined `0.25rem` and cannot follow the theme.
 
 ### Where class strings live
 
-**All CSS classes live in Python**, in module-level constants or `default_classes`. The
-`.vue` templates contain no `class="…"` of their own except `:class` bindings fed from a
-prop. That is what makes `classes=` mergeable and auditable.
+**Everything `classes=` can displace lives in Python**, in module-level constants or
+`default_classes` — the root element of each component included. What the `.vue` templates
+carry instead are the classes of their *internal* structure: the thumb of a slider, the check
+icon of a checkbox, the frame of a portaled panel. That split is what makes `classes=`
+mergeable and auditable.
+
+So the rule is about *where* a class lives, not about the count: 12 of the 24 templates do
+contain literal `class="…"` — 36 attributes in total at the time of writing, 7 of them in
+`shadcn_select.vue` alone. Those sit on elements the caller never addresses. A literal class
+on the **root**, on the other hand, competes with `default_classes` and with the caller's
+`classes=`, and the winner then depends on CSS source order instead of on `tw_merge` — which
+is exactly the bug this library exists to avoid, so root classes go in Python.
 
 `tests/audit_classes.py` encodes the conventions it depends on:
 
 - constants must be named `_?[A-Z][A-Z0-9_]*_(BASE|CLASSES|VARIANTS|SIZES)`;
 - it parses Python with `ast`, not regex, and reads `default_classes=`, `classes=` and
-  `.classes(...)` keyword arguments;
-- `CLASS_ATTR_RE` uses a lookbehind so `:class` / `v-bind:class` (JavaScript expressions) are
+  `.classes(...)` keyword arguments (`classes_in_python`, `audit_classes.py:72`);
+- it collects candidates from **both** sides (`classes_in_vue`, `audit_classes.py:92`), so a
+  typo in a template is caught too;
+- `CLASS_ATTR_RE = re.compile(r'(?<![\w:-])class="([^"]*)"')` (`audit_classes.py:34`) uses a
+  lookbehind so `:class` and `v-bind:class` (JavaScript expressions, not class strings) are
   ignored.
 
 If you rename a constant or move a class into a template, the audit will either go quiet or

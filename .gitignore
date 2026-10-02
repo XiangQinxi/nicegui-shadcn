@@ -16,6 +16,9 @@ dist/
 build/
 *.egg-info/
 
+# Sphinx documentation build output
+docs/_build/
+
 # visual_check.mjs writes its screenshots here, and the demo can be dumped to HTML
 _shot-*.png
 _probe*

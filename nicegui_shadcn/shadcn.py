@@ -9,8 +9,8 @@ Exists so that both spellings work and read well::
 rest are re-exported from :mod:`nicegui_shadcn.elements`.
 """
 
-from . import icons, theme
+from . import icons, theme, theming
 from .elements import *  # noqa: F401,F403
 from .elements import __all__ as _elements_all
 
-__all__ = ['icons', 'theme', *_elements_all]
+__all__ = ['icons', 'theme', 'theming', *_elements_all]

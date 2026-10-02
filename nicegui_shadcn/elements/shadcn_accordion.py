@@ -6,7 +6,7 @@
         with shadcn.accordion_item(value='shipping'):
             shadcn.accordion_trigger('How do you ship?')
             with shadcn.accordion_content():
-                shadcn.text('We ship by carrier pigeon, weather permitting.')
+                shadcn.label('We ship by carrier pigeon, weather permitting.')
 
 ``multiple=True`` switches reka-ui to ``type="multiple"``, in which case
 ``value`` is a list and several sections can be open at once.

@@ -1,6 +1,6 @@
 [project]
 name = "nicegui-shadcn"
-version = "0.1.1"
+version = "0.1.2"
 description = "shadcn/ui components for NiceGUI — 51 components with a precompiled Tailwind v4 theme, no build step for the user"
 authors = [{ name = "XiangQinxi", email = "XiangQinxi@outlook.com" }]
 readme = "README.md"
@@ -31,11 +31,11 @@ classifiers = [
 ]
 dependencies = ["nicegui>=3.0"]
 
-# Fill these in before publishing — PyPI shows them on the project page.
-# [project.urls]
-# Homepage = "https://github.com/<you>/nicegui-shadcn"
-# Repository = "https://github.com/<you>/nicegui-shadcn"
-# Issues = "https://github.com/<you>/nicegui-shadcn/issues"
+[project.urls]
+Homepage = "https://github.com/XiangQinxi/nicegui-shadcn"
+Repository = "https://github.com/XiangQinxi/nicegui-shadcn"
+Issues = "https://github.com/XiangQinxi/nicegui-shadcn/issues"
+Documentation = "https://github.com/XiangQinxi/nicegui-shadcn/tree/master/docs"
 
 [tool.poetry]
 # Everything importable lives in this one package. The build inputs (the
@@ -61,6 +61,26 @@ include = [
     { path = "package.json", format = ["sdist"] },
     { path = "package-lock.json", format = ["sdist"] },
     { path = "AGENT.md", format = ["sdist"] },
+    # The documentation site ships with the source too: `docs/conf.py` reads the
+    # version out of this file, so a packager can build the exact manual that
+    # matches the release without cloning the repository. `docs/_build/` is
+    # gitignored, and Poetry honours .gitignore for the sdist, so the rendered
+    # output never ends up in the archive.
+    # The documentation site ships with the source too: `docs/conf.py` reads the
+    # version out of this file, so a packager can build the exact manual that
+    # matches the release without cloning the repository. The paths are listed
+    # one by one because `include` walks a directory wholesale — naming `docs`
+    # also ships `docs/_build/`, and Poetry's `exclude` does not filter it back
+    # out (verified with poetry-core 2.x: 741 rendered files came along).
+    { path = "docs/conf.py", format = ["sdist"] },
+    { path = "docs/requirements.txt", format = ["sdist"] },
+    { path = "docs/Makefile", format = ["sdist"] },
+    { path = "docs/make.bat", format = ["sdist"] },
+    { path = "docs/index.md", format = ["sdist"] },
+    { path = "docs/*.png", format = ["sdist"] },
+    { path = "docs/_static", format = ["sdist"] },
+    { path = "docs/tutorial", format = ["sdist"] },
+    { path = "docs/start", format = ["sdist"] },
 ]
 
 [build-system]

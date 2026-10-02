@@ -43,8 +43,10 @@ ui.run()
   - [浮层](#浮层)
   - [图标](#图标)
 - [深色模式](#深色模式)
+- [主题](#主题)
 - [来自 NiceGUI 的关键字参数](#来自-nicegui-的关键字参数)
 - [组件参考](#组件参考)
+- [文档](#文档)
 - [开发](#开发)
 - [扩展样式表](#扩展样式表)
 - [打包与发布](#打包与发布)
@@ -174,8 +176,10 @@ with shadcn.table_container():
 ```python
 name = shadcn.input(placeholder='Project name')
 shadcn.textarea(placeholder='Description', rows=4)
-shadcn.checkbox('Accept terms', value=True)
-shadcn.switch('Notifications')
+terms = shadcn.checkbox(value=True)
+shadcn.label('Accept terms', for_=terms)
+notify = shadcn.switch()
+shadcn.label('Notifications', for_=notify)
 shadcn.label('Project name', for_=name)
 
 shadcn.select({'system': 'System', 'light': 'Light', 'dark': 'Dark'}, value='system')
@@ -253,7 +257,7 @@ with shadcn.dialog() as dialog:
 dialog.open()      # also close() and toggle()
 
 with shadcn.popover():
-    shadcn.popover_trigger('Open popover', variant='outline')
+    shadcn.popover_trigger('Open popover')
     with shadcn.popover_content():
         ui.label('Anything NiceGUI can render.')
 
@@ -267,6 +271,9 @@ shadcn.dropdown_menu([
 with shadcn.tooltip('Add to library', side='top'):
     shadcn.button('Hover me', variant='outline')
 ```
+
+`popover_trigger()` 与 `dialog_trigger()` 始终渲染成 outline 按钮，不接受 `variant` 或
+`size`（`shadcn_overlay.py:76`、`shadcn_overlay.py:169`）。
 
 `DialogContent(side=...)` 还接受 `'right'`、`'left'`、`'top'` 和 `'bottom'`，用来做 sheet 风格
 的面板。
@@ -293,6 +300,29 @@ Tailwind 的 `dark:` 变体绑定到 `body.body--dark` —— 也就是 NiceGUI 
 ```python
 ui.dark_mode().bind_value(...)   # or ui.dark_mode(True)
 ```
+
+## 主题
+
+所有组件读的都是同一组 CSS 变量，所以换主题就是换这些变量。随包发布的样式表里静态写着
+shadcn 的 `neutral` 配色；`theming` 模块则在运行期整体替换它 —— 不需要重新构建，也不需要重启：
+
+```python
+from nicegui_shadcn import theming
+
+theming.use_base_color('zinc')          # neutral/stone/zinc/mauve/olive/mist/taupe
+theming.set_colors(primary='#2563eb')   # tweak individual light-mode tokens
+theming.set_dark_colors(primary='#60a5fa')
+theming.set_radius(0.75)                # every corner derives from --radius
+theming.add_color('warning', light='#f59e0b', dark='#fbbf24')
+theming.reset()                         # back to the compiled default
+```
+
+`add_color()` 会定义新的 token，并生成配套的 `bg-`/`text-`/`border-`/`ring-`/`fill-`/
+`stroke-`/`outline-`/`divide-` 工具类以及它们的 `dark:` 变体，让 shadcn 没提供的颜色用起来和
+内置的一样。服务启动之前调用会被合并成一次 head 注入；启动之后调用会广播给所有已打开的页面，
+所以主题选择器可以实时生效。
+
+token 表、圆角阶梯与各种注意事项见文档里的 [主题](docs/tutorial/theming.md)。
 
 ## 来自 NiceGUI 的关键字参数
 
@@ -337,6 +367,27 @@ shadcn.select([('system', 'System'), ('light', 'Light')])      # (value, label) 
 shadcn.select([{'value': 'system', 'label': 'System', 'disabled': False}])
 ```
 
+## 文档
+
+完整文档站位于 [`docs/`](docs) —— 以中文为主，用 [Sphinx](https://www.sphinx-doc.org) 与
+[pydata-sphinx-theme](https://pydata-sphinx-theme.readthedocs.io) 构建：
+
+- **首页** —— `docs/index.md`，含浅色与深色的 demo 截图。
+- **教程** —— 基础内容，与本 README 覆盖面相同：安装、工作原理、用法、布局、表单、展示、
+  折叠、浮层、图标、深色模式、主题、组件参考、设计说明与限制。
+- **开始** —— 进阶内容：制作新组件、样式与主题、构建与测试、打包与发布。
+
+```bash
+pip install -r docs/requirements.txt
+python -m sphinx -b html docs docs/_build/html
+python -m http.server 8300 --directory docs/_build/html
+```
+
+然后在浏览器中打开 <http://127.0.0.1:8300/>。
+`docs/Makefile` 与 `docs/make.bat` 封装了同样的命令（`make -C docs html`，或
+`docs\make.bat html`）。页面是 MyST Markdown，且 `docs/conf.py` 直接从 `pyproject.toml`
+读取版本号，因此文档与包不会各自漂移。
+
 ## 开发
 
 ```bash
@@ -353,11 +404,13 @@ npx esbuild frontend/vendor/reka-entry.js --bundle --format=esm --target=es2020 
 测试：
 
 ```bash
-python tests/test_tw_merge.py        # tailwind-merge semantics (37 cases)
+python tests/test_tw_merge.py        # tailwind-merge semantics (62 cases)
 python tests/test_render.py          # every component renders without a client
 python tests/audit_classes.py        # every class used in Python exists in the CSS
+python tests/check_examples.py       # every Markdown sample binds to a real signature
+python tests/check_readme.py         # README.md and README_zh.md stay in sync
 python examples/demo.py              # then, in another shell:
-node tests/visual_check.mjs http://127.0.0.1:8123/
+node tests/visual_check.mjs http://127.0.0.1:8080/
 ```
 
 `visual_check.mjs` 在 headless Edge 中驱动该 demo，断言那些 Python 测试看不到的东西：计算出的

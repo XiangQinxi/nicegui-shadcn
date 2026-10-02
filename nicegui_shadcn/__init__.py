@@ -33,14 +33,27 @@ Dark mode
 ---------
 The Tailwind ``dark:`` variant is bound to ``body.body--dark``, the class that
 NiceGUI's own :func:`nicegui.ui.dark_mode` toggles. Use it as usual.
+
+Theming
+-------
+The design tokens are plain CSS custom properties, so they can be replaced at
+runtime instead of being frozen into the compiled stylesheet::
+
+    from nicegui_shadcn import theming
+
+    theming.use_base_color('zinc')
+    theming.set_radius(0.75)
+    theming.set_colors(primary='#2563eb')
+
+See :mod:`nicegui_shadcn.theming` for the full API.
 """
 
 from __future__ import annotations
 
-from . import icons, shadcn, theme
+from . import icons, shadcn, theme, theming
 from .elements import *  # noqa: F401,F403
 from .elements import __all__ as _elements_all
 
-__version__ = '0.1.1'
+__version__ = '0.1.2'
 
-__all__ = ['__version__', 'icons', 'shadcn', 'theme', *_elements_all]
+__all__ = ['__version__', 'icons', 'shadcn', 'theme', 'theming', *_elements_all]

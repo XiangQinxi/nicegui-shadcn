@@ -18,7 +18,7 @@
 import { existsSync } from 'node:fs';
 import { chromium } from 'playwright-core';
 
-const BASE = process.argv[2] ?? process.env.SHADCN_DEMO_URL ?? 'http://127.0.0.1:8123/';
+const BASE = process.argv[2] ?? process.env.SHADCN_DEMO_URL ?? 'http://127.0.0.1:8080/';
 const OUT_DIR = process.env.SHADCN_SHOT_DIR ?? '.';
 
 const CANDIDATES = [

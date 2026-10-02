@@ -45,8 +45,10 @@ ui.run()
   - [Overlays](#overlays)
   - [Icons](#icons)
 - [Dark mode](#dark-mode)
+- [Theme](#theme)
 - [Keyword arguments from NiceGUI](#keyword-arguments-from-nicegui)
 - [Component reference](#component-reference)
+- [Documentation](#documentation)
 - [Development](#development)
 - [Extending the stylesheet](#extending-the-stylesheet)
 - [Packaging and publishing](#packaging-and-publishing)
@@ -181,8 +183,10 @@ Every form control is a NiceGUI `ValueElement`, so `bind_value`, `on_value_chang
 ```python
 name = shadcn.input(placeholder='Project name')
 shadcn.textarea(placeholder='Description', rows=4)
-shadcn.checkbox('Accept terms', value=True)
-shadcn.switch('Notifications')
+terms = shadcn.checkbox(value=True)
+shadcn.label('Accept terms', for_=terms)
+notify = shadcn.switch()
+shadcn.label('Notifications', for_=notify)
 shadcn.label('Project name', for_=name)
 
 shadcn.select({'system': 'System', 'light': 'Light', 'dark': 'Dark'}, value='system')
@@ -261,7 +265,7 @@ with shadcn.dialog() as dialog:
 dialog.open()      # also close() and toggle()
 
 with shadcn.popover():
-    shadcn.popover_trigger('Open popover', variant='outline')
+    shadcn.popover_trigger('Open popover')
     with shadcn.popover_content():
         ui.label('Anything NiceGUI can render.')
 
@@ -275,6 +279,9 @@ shadcn.dropdown_menu([
 with shadcn.tooltip('Add to library', side='top'):
     shadcn.button('Hover me', variant='outline')
 ```
+
+`popover_trigger()` and `dialog_trigger()` always render as outline buttons; they take no
+`variant` or `size` (`shadcn_overlay.py:76`, `shadcn_overlay.py:169`).
 
 `DialogContent(side=...)` also accepts `'right'`, `'left'`, `'top'` and `'bottom'` for
 sheet-style panels.
@@ -302,6 +309,32 @@ NiceGUI switch is all you need:
 ```python
 ui.dark_mode().bind_value(...)   # or ui.dark_mode(True)
 ```
+
+## Theme
+
+Every component reads the same set of CSS variables, so re-theming means replacing those
+variables. The shipped stylesheet carries shadcn's `neutral` palette statically; the
+`theming` module replaces the whole palette at runtime — no rebuild, no restart:
+
+```python
+from nicegui_shadcn import theming
+
+theming.use_base_color('zinc')          # neutral/stone/zinc/mauve/olive/mist/taupe
+theming.set_colors(primary='#2563eb')   # tweak individual light-mode tokens
+theming.set_dark_colors(primary='#60a5fa')
+theming.set_radius(0.75)                # every corner derives from --radius
+theming.add_color('warning', light='#f59e0b', dark='#fbbf24')
+theming.reset()                         # back to the compiled default
+```
+
+`add_color()` defines the token and generates the matching `bg-`/`text-`/`border-`/`ring-`/
+`fill-`/`stroke-`/`outline-`/`divide-` utilities plus their `dark:` variants, so a colour
+shadcn does not ship behaves like one that it does. Calls made before the server starts are
+coalesced into a single head injection; calls made afterwards are broadcast to every open
+page, so a theme picker updates live.
+
+See [Theme](docs/tutorial/theming.md) in the documentation for the token table, the radius
+ladder and the caveats.
 
 ## Keyword arguments from NiceGUI
 
@@ -347,6 +380,30 @@ shadcn.select([('system', 'System'), ('light', 'Light')])      # (value, label) 
 shadcn.select([{'value': 'system', 'label': 'System', 'disabled': False}])
 ```
 
+## Documentation
+
+A documentation site lives in [`docs/`](docs) — Chinese-first, built with
+[Sphinx](https://www.sphinx-doc.org) and
+[pydata-sphinx-theme](https://pydata-sphinx-theme.readthedocs.io):
+
+- **首页 (Home)** — `docs/index.md`, with light and dark screenshots of the demo.
+- **教程 (Tutorial)** — the basics, covering the same ground as this README: installation,
+  how it works, usage, layout, forms, display, disclosure, overlays, icons, dark mode,
+  theming, the component reference, and the design notes.
+- **开始 (Getting started)** — the advanced material: writing a new component, styling and
+  theming, building and testing, and packaging.
+
+```bash
+pip install -r docs/requirements.txt
+python -m sphinx -b html docs docs/_build/html
+python -m http.server 8300 --directory docs/_build/html
+```
+
+Then open <http://127.0.0.1:8300/> in a browser.
+`docs/Makefile` and `docs/make.bat` wrap the same command (`make -C docs html`, or
+`docs\make.bat html`). The pages are MyST Markdown and `docs/conf.py` reads the version
+straight out of `pyproject.toml`, so the docs and the package cannot drift apart.
+
 ## Development
 
 ```bash
@@ -364,11 +421,13 @@ a function of those globs alone and does not change with whatever else is in the
 Tests:
 
 ```bash
-python tests/test_tw_merge.py        # tailwind-merge semantics (37 cases)
+python tests/test_tw_merge.py        # tailwind-merge semantics (62 cases)
 python tests/test_render.py          # every component renders without a client
 python tests/audit_classes.py        # every class used in Python exists in the CSS
+python tests/check_examples.py       # every Markdown sample binds to a real signature
+python tests/check_readme.py         # README.md and README_zh.md stay in sync
 python examples/demo.py              # then, in another shell:
-node tests/visual_check.mjs http://127.0.0.1:8123/
+node tests/visual_check.mjs http://127.0.0.1:8080/
 ```
 
 `visual_check.mjs` drives the demo in headless Edge and asserts the things that a Python

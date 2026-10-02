@@ -1,0 +1,15 @@
+# Documentation build dependencies.
+#
+#   pip install -r docs/requirements.txt
+#   sphinx-build -b html docs docs/_build/html
+#
+# The Chinese pages are the source of truth, so no translation toolchain is
+# required; sphinx-intl is only needed if an English build is added later.
+sphinx>=7.2
+pydata-sphinx-theme>=0.16
+myst-parser>=3.0
+sphinx-design>=0.6
+sphinx-copybutton>=0.5
+# Required by myst-parser's "linkify" extension, which conf.py enables:
+# without it the build dies with "Linkify enabled but not installed."
+linkify-it-py>=2.0
