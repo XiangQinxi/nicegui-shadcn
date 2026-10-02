@@ -1,6 +1,6 @@
 {
   "name": "nicegui-shadcn-build",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Build toolchain for the nicegui-shadcn runtime assets: the Tailwind v4 stylesheet and the reka-ui bundle. Only needed to rebuild them; installing the Python package does not require npm.",
   "keywords": [
