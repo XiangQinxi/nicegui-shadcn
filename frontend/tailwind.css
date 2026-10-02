@@ -272,7 +272,7 @@ body.body--dark,
 @source inline("font-{thin,extralight,light,normal,medium,semibold,bold,extrabold,black,mono,sans,serif}");
 @source inline("leading-{none,tight,snug,normal,relaxed,loose,3,4,5,6,7,8,9,10}");
 @source inline("tracking-{tighter,tight,normal,wide,wider,widest}");
-@source inline("rounded{,-none,-sm,-md,-lg,-xl,-2xl,-3xl,-full}");
+@source inline("rounded{,-none,-sm,-md,-lg,-xl,-2xl,-3xl,-full,-t,-r,-b,-l,-tl,-tr,-br,-bl}");
 @source inline("rounded-{t,r,b,l,tl,tr,br,bl}-{none,sm,md,lg,xl,2xl,3xl,full}");
 @source inline("border{,-0,-2,-4,-8}");
 @source inline("border-{solid,dashed,dotted,double,none}");

@@ -15,9 +15,25 @@ That removal is exactly what this module does::
 
 The implementation is deliberately conservative.  It splits every class into a
 variant prefix and a base utility, maps the base utility onto a *conflict
-group*, and lets the last occurrence of a group win.  Anything it does not
-recognise is treated as its own group, so unknown classes are never dropped --
-they are only de-duplicated.
+group*, and gives that group an ancestor *path* inside its family::
+
+    p       -> ('p',)            px       -> ('p', 'x')
+    pt      -> ('p', 'y', 't')   size     -> ('size',)
+    w       -> ('size', 'w')     inset    -> ('inset',)
+    left    -> ('inset', 'x', 'left')
+    rounded -> ('rounded',)      rounded-tl -> ('rounded', 't', 'l')
+
+A later class then evicts every earlier class *of the same variant* whose path
+starts with its own path.  The relation is directional, exactly as in
+tailwind-merge: a shorthand removes the per-axis classes it covers
+(``px-4 py-2`` + ``p-4`` -> ``p-4``), while a narrower class never removes an
+earlier shorthand (``p-4`` + ``px-2`` -> ``p-4 px-2``).  Siblings such as
+``w-4 h-2`` or ``left-2 inset-y-4`` are both kept.
+
+Anything it does not recognise is treated as its own single-segment group, so
+unknown classes are never dropped -- they are only de-duplicated.  That
+de-duplication is the one place this port is deliberately stricter than
+tailwind-merge, which would emit an unrecognised class verbatim twice.
 """
 
 from __future__ import annotations
@@ -155,6 +171,72 @@ _FONT_FAMILIES = {'sans', 'serif', 'mono'}
 # The longest prefix wins, so that ``text-`` is not matched before ``text-balance``.
 _PREFIX_KEYS_BY_LENGTH = sorted(_PREFIX, key=len, reverse=True)
 
+# --------------------------------------------------------------------------- #
+# conflict-group hierarchy: group -> its ancestor path inside the family
+# --------------------------------------------------------------------------- #
+# Tailwind's conflict rules are directional, not symmetric: a *shorthand* (a
+# parent, e.g. ``p``/``size``/``inset``/``rounded``) evicts an earlier class
+# that covers only part of it, but a narrower class never evicts an earlier
+# shorthand.  Each group therefore gets a path instead of a flat identity, and
+# ``tw_merge`` drops an earlier class when its path starts with the new one's.
+#
+# Groups absent from this table are their own single-segment family: they are
+# only ever evicted by an identical group.  Deliberately excluded from the
+# ``size`` family are ``min-w``/``max-w``/``min-h``/``max-h``, which tailwind
+# keeps alongside ``w``/``h``.
+_GROUP_PATHS: dict[str, tuple[str, ...]] = {
+    # padding ------------------------------------------------------------- #
+    'p': ('p',),
+    'px': ('p', 'x'), 'py': ('p', 'y'),
+    'ps': ('p', 'x', 's'), 'pe': ('p', 'x', 'e'),
+    'pl': ('p', 'x', 'l'), 'pr': ('p', 'x', 'r'),
+    'pt': ('p', 'y', 't'), 'pb': ('p', 'y', 'b'),
+    # margin -------------------------------------------------------------- #
+    'm': ('m',),
+    'mx': ('m', 'x'), 'my': ('m', 'y'),
+    'ms': ('m', 'x', 's'), 'me': ('m', 'x', 'e'),
+    'ml': ('m', 'x', 'l'), 'mr': ('m', 'x', 'r'),
+    'mt': ('m', 'y', 't'), 'mb': ('m', 'y', 'b'),
+    # width / height hang off ``size`` ------------------------------------ #
+    'size': ('size',), 'w': ('size', 'w'), 'h': ('size', 'h'),
+    # gap ----------------------------------------------------------------- #
+    'gap': ('gap',), 'gap-x': ('gap', 'x'), 'gap-y': ('gap', 'y'),
+    # inset: the physical sides sit below the x/y axes -------------------- #
+    'inset': ('inset',),
+    'inset-x': ('inset', 'x'), 'inset-y': ('inset', 'y'),
+    'left': ('inset', 'x', 'left'), 'right': ('inset', 'x', 'right'),
+    'start': ('inset', 'x', 'start'), 'end': ('inset', 'x', 'end'),
+    'top': ('inset', 'y', 'top'), 'bottom': ('inset', 'y', 'bottom'),
+    # overflow ------------------------------------------------------------ #
+    'overflow': ('overflow',),
+    'overflow-x': ('overflow', 'x'), 'overflow-y': ('overflow', 'y'),
+    # border width -------------------------------------------------------- #
+    'border-w': ('border-w',),
+    'border-w-x': ('border-w', 'x'), 'border-w-y': ('border-w', 'y'),
+    'border-w-l': ('border-w', 'x', 'l'), 'border-w-r': ('border-w', 'x', 'r'),
+    'border-w-s': ('border-w', 'x', 's'), 'border-w-e': ('border-w', 'x', 'e'),
+    'border-w-t': ('border-w', 'y', 't'), 'border-w-b': ('border-w', 'y', 'b'),
+    # border radius, including the two-letter corners --------------------- #
+    'rounded': ('rounded',),
+    'rounded-x': ('rounded', 'x'), 'rounded-y': ('rounded', 'y'),
+    'rounded-t': ('rounded', 't'), 'rounded-b': ('rounded', 'b'),
+    'rounded-l': ('rounded', 'l'), 'rounded-r': ('rounded', 'r'),
+    'rounded-s': ('rounded', 's'), 'rounded-e': ('rounded', 'e'),
+    'rounded-tl': ('rounded', 't', 'l'), 'rounded-tr': ('rounded', 't', 'r'),
+    'rounded-bl': ('rounded', 'b', 'l'), 'rounded-br': ('rounded', 'b', 'r'),
+    'rounded-ss': ('rounded', 's', 's'), 'rounded-se': ('rounded', 's', 'e'),
+    'rounded-es': ('rounded', 'e', 's'), 'rounded-ee': ('rounded', 'e', 'e'),
+}
+
+
+def _path(group: str) -> tuple[str, ...]:
+    """Return the ancestor path of a conflict group.
+
+    Unknown groups become a single-segment family of their own, which keeps the
+    "unknown classes are never dropped, only de-duplicated" guarantee.
+    """
+    return _GROUP_PATHS.get(group, (group,))
+
 
 def _group(base: str) -> str:
     """Return the conflict group of a bare utility (no variants)."""
@@ -196,11 +278,16 @@ def _group(base: str) -> str:
         return 'border-color'
     if b.startswith('rounded-'):
         rest = b[len('rounded-'):]
-        if rest[0] in _BORDER_SIDES:
-            side, _, size = rest.partition('-')
-            if not size or size in _RADIUS_SIZES:
-                return f'rounded-{side}'
+        # A bare radius size is a *size*, not a side.  Test it before the side
+        # letters, or ``xl``, ``lg``, ``sm`` and ``xs`` are read as the sides
+        # ``x``/``l``/``s``/``x`` and land in a side group that the generic
+        # ``rounded`` group can never evict -- which is what made
+        # ``Card(classes='rounded-full')`` silently keep its ``rounded-xl``.
+        if rest in _RADIUS_SIZES:
             return 'rounded'
+        side, _, size = rest.partition('-')
+        if side[:1] in _BORDER_SIDES and (not size or size in _RADIUS_SIZES):
+            return f'rounded-{side}'
         return 'rounded'
     if b.startswith('shadow-'):
         rest = b[7:]
@@ -254,18 +341,26 @@ def tw_merge(*values: str | None) -> str:
     Returns a single space separated class string with all conflicts resolved.
     """
     out: list[str | None] = []
-    seen: dict[str, int] = {}
+    # (variants, path, index into ``out``) for every class still standing.
+    kept: list[tuple[str, tuple[str, ...], int]] = []
     for value in values:
         if not value:
             continue
         for cls in str(value).split():
             variants, base = _split_variants(cls)
-            key = f'{variants}|{_group(base)}'
-            previous = seen.get(key)
-            if previous is not None:
-                out[previous] = None
+            path = _path(_group(base))
+            # A later class wins whenever its path is a prefix of an earlier
+            # class's path, so a shorthand evicts the narrower classes it covers
+            # -- but the narrower class leaves an earlier shorthand alone.
+            survivors: list[tuple[str, tuple[str, ...], int]] = []
+            for entry in kept:
+                if entry[0] == variants and entry[1][:len(path)] == path:
+                    out[entry[2]] = None
+                else:
+                    survivors.append(entry)
+            kept = survivors
             out.append(cls)
-            seen[key] = len(out) - 1
+            kept.append((variants, path, len(out) - 1))
     return ' '.join(c for c in out if c)
 
 

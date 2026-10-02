@@ -1,5 +1,7 @@
 # nicegui-shadcn
 
+**English** · [简体中文](README_zh.md)
+
 [shadcn/ui](https://ui.shadcn.com) components for [NiceGUI](https://nicegui.io), built on
 NiceGUI's documented
 [“Using other Vue UI frameworks”](https://nicegui.io/documentation/section_styling_appearance#using_other_vue_ui_frameworks)
@@ -104,6 +106,25 @@ NiceGUI's own `.classes(...)` is unchanged and still appends:
 btn = shadcn.button('Save')
 btn.classes('mt-4')          # appended, no conflict resolution
 btn.classes(replace='mt-8')  # NiceGUI's replace still works
+```
+
+Appending is a silent trap when the new class collides with one the component already
+carries: both utilities end up in the `class` attribute and the stylesheet picks the winner,
+which is not necessarily your intent. A `Card` ships `py-6` and the build emits `.p-0`
+*before* `.py-6`, so `shadcn.card().classes('p-0')` really does keep 1.5rem of vertical
+padding.
+
+`.with_classes(...)` is the merging counterpart, available after construction:
+
+```python
+shadcn.card().with_classes('p-0')           # py-6 evicted, p-0 wins
+shadcn.card().with_classes('rounded-full')  # rounded-xl evicted
+```
+
+It runs through the same `tailwind-merge`, and returns the element so it chains:
+
+```python
+card = shadcn.card().with_classes('p-0 mt-4')
 ```
 
 The stylesheet is pre-compiled, so `classes=` only affects classes that were generated
@@ -285,7 +306,8 @@ ui.dark_mode().bind_value(...)   # or ui.dark_mode(True)
 ## Keyword arguments from NiceGUI
 
 Every component is a real `nicegui.element.Element`, so the standard toolbox works
-unchanged: `.bind_value()`, `.on()`, `.tooltip()`, `.classes()`, `.style()`, `.props()`,
+unchanged: `.bind_value()`, `.on()`, `.tooltip()`, `.classes()`, `.with_classes()`, `.style()`,
+`.props()`,
 `.move()`, `.set_enabled()`, `.visible`, `.add_slot()`, and `ui.context`.
 
 ## Component reference

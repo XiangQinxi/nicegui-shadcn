@@ -53,8 +53,39 @@ CASES: list[tuple[tuple[str, ...], str]] = [
     (('gap-2 gap-x-4', 'gap-x-8'), 'gap-2 gap-x-8'),
     # padding sides are independent
     (('p-4 pt-2', 'pt-8'), 'p-4 pt-8'),
-    # sizing
-    (('size-9 w-full', 'size-4'), 'w-full size-4'),
+    # sizing: a later shorthand evicts the axis classes it covers.  This used to
+    # expect 'w-full size-4', which is not what tailwind-merge does -- `size`
+    # is the parent of both `w` and `h`, so `size-4` removes `w-full` too.
+    (('size-9 w-full', 'size-4'), 'size-4'),
+    # ...but a later axis class leaves an earlier shorthand alone
+    (('w-4 h-2', 'w-full'), 'h-2 w-full'),
+    (('p-4', 'px-2'), 'p-4 px-2'),
+    (('p-4', 'pt-1'), 'p-4 pt-1'),
+    (('w-4', 'size-full'), 'size-full'),
+    (('inset-0', 'top-2'), 'inset-0 top-2'),
+    (('left-2', 'inset-y-4'), 'left-2 inset-y-4'),
+    (('border-4', 'border-t-2'), 'border-4 border-t-2'),
+    (('border-x-2', 'border-l-4'), 'border-x-2 border-l-4'),
+    (('rounded-xl', 'rounded-t-lg'), 'rounded-xl rounded-t-lg'),
+    (('rounded', 'rounded-t-lg'), 'rounded rounded-t-lg'),
+    (('rounded-t-lg', 'rounded-tl-lg'), 'rounded-t-lg rounded-tl-lg'),
+    # ...while a shorthand reaches every axis and every nested side below it
+    (('px-4 py-2', 'p-4'), 'p-4'),
+    (('mx-2 my-1', 'm-4'), 'm-4'),
+    (('pt-1 px-2', 'p-4'), 'p-4'),
+    (('ms-2 me-1', 'ms-4'), 'me-1 ms-4'),
+    (('gap-x-3 gap-y-1', 'gap-2'), 'gap-2'),
+    (('inset-x-4 inset-y-2', 'inset-0'), 'inset-0'),
+    (('overflow-x-auto overflow-y-hidden', 'overflow-visible'), 'overflow-visible'),
+    (('border-l-2 border-r-4', 'border-x-2'), 'border-x-2'),
+    (('size-full h-4', 'size-9'), 'size-9'),
+    (('rounded-tl-lg rounded-tr-lg', 'rounded-t-xl'), 'rounded-t-xl'),
+    # radius sizes conflict with each other whatever letter they start with --
+    # `xl`, `lg`, `sm` and `xs` must not be read as the sides x/l/s/x
+    (('rounded-lg', 'rounded-md'), 'rounded-md'),
+    (('rounded-full', 'rounded-xl'), 'rounded-xl'),
+    (('rounded-sm', 'rounded-none'), 'rounded-none'),
+    (('rounded-t-lg', 'rounded-lg'), 'rounded-lg'),
     # unknown classes are preserved, duplicates removed
     (('my-custom-class', 'my-custom-class'), 'my-custom-class'),
     (('shadcn-foo shadcn-bar', 'shadcn-baz'), 'shadcn-foo shadcn-bar shadcn-baz'),

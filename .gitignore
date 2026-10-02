@@ -23,3 +23,6 @@ _probe*
 /_*.cjs
 /_*.mjs
 /_*.html
+
+
+demos/
