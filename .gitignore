@@ -24,5 +24,8 @@ _probe*
 /_*.mjs
 /_*.html
 
+# IDE project files
+.idea/
 
+# scratch demos, not part of the distribution
 demos/
