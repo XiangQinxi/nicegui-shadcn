@@ -28,6 +28,7 @@ package, so importing `nicegui_shadcn` never reads a `.css` or a `.js` source fi
 | `frontend/tailwind.css` | **Build input**: Tailwind v4 source, design tokens, `@source` globs | sdist |
 | `frontend/vendor/reka-entry.js` | **Build input**: esbuild entry for the reka-ui bundle | sdist |
 | `examples/demo.py` | **Build input + dev aid**: the demo the browser test drives | sdist |
+| `examples/login.py` | Dev aid: a small sign-in page, not covered by the class audit | sdist |
 | `tests/` | Dev | sdist |
 | `package.json`, `package-lock.json` | Dev: pins the Tailwind CLI and esbuild | sdist |
 | `node_modules/` | Installed, never shipped | — |
@@ -181,9 +182,13 @@ Two consequences:
   that sets `LOOPBACK = False` therefore unwraps first, with a `currentValue` computed —
   see `shadcn_input.vue`, `shadcn_textarea.vue`, `shadcn_input_otp.vue` and the
   `toDate()` guard in `shadcn_calendar.vue`.
-- **Declare every prop you pass.** An undeclared prop falls through to the DOM; NiceGUI's
-  own `loopback` prop once leaked onto the select trigger as `<button loopback="true">`
-  until `shadcn_select.vue` declared it.
+- **Declare every prop you pass.** An undeclared prop falls through to the DOM: NiceGUI sends
+  `loopback` to *every* `ValueElement`, so a template that does not declare it renders
+  `<input loopback="false">` or `<span loopback="true">` onto the root element. 19 templates had
+  the leak, including the two text fields and the checkbox on `examples/login.py`. Each
+  `props: {` block therefore opens with
+  `loopback: { type: [Boolean, String], default: undefined },`, and
+  `tests/visual_check.mjs` asserts that `[loopback]` matches nothing on the page.
 
 ### Text and children
 
@@ -269,8 +274,14 @@ Everything we emit joins those layers.
   Layer precedence is reversed for important declarations, so making ours important too is
   the only way `shadcn.button()` comes out shadcn-black instead of Quasar-blue.
 - **Do not import Tailwind's preflight.** Quasar already normalises; a second reset fights
-  it. The one preflight rule we need — `[hidden] { display: none !important }`, used by
-  mounted-but-closed panels — is added by hand in `@layer base`.
+  it. The two preflight rules we need — `[hidden]` and the `.hidden` class, both
+  `display: none !important` — are added by hand in `@layer base`. The class is the one that
+  matters: NiceGUI's `Visibility` mixin hides an element by adding `hidden`
+  (`nicegui/elements/mixins/visibility.py`), and without an `!important` rule of our own the
+  `inline-flex` / `flex` / `grid` utilities win the tie (same layer, same specificity), so
+  `set_visibility(False)` was a silent no-op on every button, badge and avatar. A
+  `!important` declared in `base` beats the utilities layer, because layer precedence is
+  reversed for important declarations — the same rule that makes the import below work.
 - Bind the dark variant to the class NiceGUI already toggles:
   `@custom-variant dark (&:where(body.body--dark, body.body--dark *));`
 - Expose design tokens through `@theme inline { --color-primary: var(--primary); … }` so

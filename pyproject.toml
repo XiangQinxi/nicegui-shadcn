@@ -1,6 +1,6 @@
 [project]
 name = "nicegui-shadcn"
-version = "0.1.3"
+version = "0.1.4"
 description = "shadcn/ui components for NiceGUI — the full component set with a precompiled Tailwind v4 theme, no build step for the user"
 authors = [{ name = "XiangQinxi", email = "XiangQinxi@outlook.com" }]
 readme = "README.md"

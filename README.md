@@ -30,7 +30,8 @@ ui.run()
 ![the demo app in dark mode](docs/demo-dark.png)
 
 `python examples/demo.py` renders every component; it is what the screenshots above and
-`tests/visual_check.mjs` use.
+`tests/visual_check.mjs` use. `python examples/login.py` is a smaller, real-world page: a
+sign-in card with a show/hide password toggle.
 
 ## Contents
 

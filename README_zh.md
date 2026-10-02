@@ -29,6 +29,7 @@ ui.run()
 ![the demo app in dark mode](docs/demo-dark.png)
 
 `python examples/demo.py` 会渲染出全部组件；上面的截图以及 `tests/visual_check.mjs` 用的就是它。
+`python examples/login.py` 则是一个更小、更接近真实用法的页面：一张登录卡片，密码框带显示/隐藏切换。
 
 ## 目录
 
