@@ -37,6 +37,7 @@ class Drawer(_Openable, ShadcnElement, ValueElement, component='shadcn_drawer.vu
         e.g. ``[0.4, 0.9]`` or ``['200px', 1]``.
     :param snap_point: the snap point to start at.
     :param on_change: callback invoked with the value-change event when the open state changes; read ``e.value`` for the new state.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
     """
 
     def __init__(self,
@@ -65,7 +66,13 @@ class Drawer(_Openable, ShadcnElement, ValueElement, component='shadcn_drawer.vu
 
 class DrawerTrigger(ShadcnElement, TextElement, component='shadcn_drawer_trigger.vue',
                     default_classes=_button_classes('outline')):
-    """The element that opens a :class:`Drawer` when clicked."""
+    """The element that opens a :class:`Drawer` when clicked.
+
+    :param text: the text to display.
+    :param as_child: render the child element instead of a wrapper.
+    :param on_click: callback invoked on click.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
+    """
 
     def __init__(self,
                  text: str = '',
@@ -91,6 +98,8 @@ class DrawerContent(ShadcnElement, component='shadcn_drawer_content.vue'):
     :param side: which edge the panel hugs. Keep it in sync with the
         :class:`Drawer` it belongs to.
     :param closable: render the small close button in the panel corner.
+    :param aria_label: fallback heading used when ``title`` is empty.
+    :param classes: classes for the panel itself, which lives in a portal.
     """
 
     def __init__(self,
@@ -113,21 +122,34 @@ class DrawerContent(ShadcnElement, component='shadcn_drawer_content.vue'):
 
 
 class DrawerFooter(ShadcnElement, default_classes='mt-auto flex flex-col gap-2'):
-    """The action row at the bottom of a :class:`DrawerContent`."""
+    """The action row at the bottom of a :class:`DrawerContent`.
+
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
+    :param variant_classes: classes implied by the variant, set by the component itself.
+    """
 
 
 def drawer(value: bool = False, **kwargs: Any) -> Drawer:
-    """Create a :class:`Drawer`."""
+    """Create a :class:`Drawer`.
+
+    :param value: whether the drawer starts out open.
+    """
     return Drawer(value, **kwargs)
 
 
 def drawer_trigger(text: str = '', **kwargs: Any) -> DrawerTrigger:
-    """Create a :class:`DrawerTrigger`."""
+    """Create a :class:`DrawerTrigger`.
+
+    :param text: the text to display.
+    """
     return DrawerTrigger(text, **kwargs)
 
 
 def drawer_content(title: str | None = None, **kwargs: Any) -> DrawerContent:
-    """Create a :class:`DrawerContent`."""
+    """Create a :class:`DrawerContent`.
+
+    :param title: heading text, rendered for screen readers only when omitted.
+    """
     return DrawerContent(title, **kwargs)
 
 

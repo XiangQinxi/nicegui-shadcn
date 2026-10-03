@@ -33,6 +33,7 @@ class NativeSelect(ShadcnElement, ValueElement, component='shadcn_native_select.
     :param disabled: whether the control can be changed.
     :param on_change: callback invoked with the value-change event when another
         entry is picked; read ``e.value`` for the new value.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
     """
 
     def __init__(self,
@@ -62,11 +63,18 @@ class NativeSelect(ShadcnElement, ValueElement, component='shadcn_native_select.
         self.update()
 
     def set_options(self, options: Mapping[str, str] | Iterable[Any] | None) -> None:
-        """Replace the available entries."""
+        """Replace the available entries.
+
+        :param options: the new options, in any of the shapes the constructor's
+            ``options`` accepts.
+        """
         self._props['items'] = normalize_options(options or [])
         self.update()
 
 
 def native_select(options: Mapping[str, str] | Iterable[Any] | None = None, **kwargs: Any) -> NativeSelect:
-    """Create a :class:`NativeSelect`."""
+    """Create a :class:`NativeSelect`.
+
+    :param options: the choices to offer.
+    """
     return NativeSelect(options, **kwargs)

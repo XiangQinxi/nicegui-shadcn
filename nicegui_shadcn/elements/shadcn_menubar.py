@@ -66,6 +66,7 @@ class Menubar(ShadcnElement, component='shadcn_menubar.vue', default_classes=_ME
     :param on_select: callback invoked with the event when an item is chosen.
         The chosen value is ``e.args`` (the template emits it as the single
         argument of the event).
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
     """
 
     def __init__(self,
@@ -85,10 +86,18 @@ class Menubar(ShadcnElement, component='shadcn_menubar.vue', default_classes=_ME
             self.on('select', on_select)
 
     def set_menus(self, menus: Mapping[str, Any] | Iterable[Any]) -> None:
-        """Replace every menu of the bar."""
+        """Replace every menu of the bar.
+
+        :param menus: the new menus, in any of the shapes the constructor's
+            ``menus`` accepts.
+        """
         self._props['menus'] = _normalize_menus(menus)
 
 
 def menubar(menus: Mapping[str, Any] | Iterable[Any] | None = None, **kwargs: Any) -> Menubar:
-    """Create a horizontal menu bar. See :class:`Menubar`."""
+    """Create a horizontal menu bar. See :class:`Menubar`.
+
+    :param menus: a mapping of ``label -> items`` or an iterable of
+        ``{'label': ..., 'items': [...]}`` mappings.
+    """
     return Menubar(menus, **kwargs)

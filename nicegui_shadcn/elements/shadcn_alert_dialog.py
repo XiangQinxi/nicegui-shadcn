@@ -37,6 +37,7 @@ class AlertDialog(_Openable, ShadcnElement, ValueElement, component='shadcn_aler
     :param on_change: callback invoked with the value-change event when the open state changes; read ``e.value`` for the new state.
         Use it to learn *which* way the user got out -- both actions close the
         dialog, so the state alone cannot tell them apart.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
     """
 
     def __init__(self,
@@ -54,7 +55,13 @@ class AlertDialog(_Openable, ShadcnElement, ValueElement, component='shadcn_aler
 
 class AlertDialogTrigger(ShadcnElement, TextElement, component='shadcn_alert_dialog_trigger.vue',
                          default_classes=_button_classes('outline')):
-    """The element that opens an :class:`AlertDialog` when clicked."""
+    """The element that opens an :class:`AlertDialog` when clicked.
+
+    :param text: the text to display.
+    :param as_child: render the child element instead of a wrapper.
+    :param on_click: callback invoked on click.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
+    """
 
     def __init__(self,
                  text: str = '',
@@ -99,8 +106,10 @@ class AlertDialogAction(ShadcnElement, TextElement, component='shadcn_alert_dial
                         default_classes=_button_classes()):
     """The confirming button. Clicking it closes the dialog.
 
+    :param text: the text to display.
     :param on_click: callback invoked when it is clicked. It runs before the
         dialog closes, and the dialog closes whether or not it raises.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
     """
 
     def __init__(self,
@@ -119,7 +128,9 @@ class AlertDialogCancel(ShadcnElement, TextElement, component='shadcn_alert_dial
                         default_classes=_button_classes('outline')):
     """The dismissing button. Clicking it closes the dialog.
 
+    :param text: the text to display.
     :param on_click: callback invoked when it is clicked.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
     """
 
     def __init__(self,
@@ -135,31 +146,50 @@ class AlertDialogCancel(ShadcnElement, TextElement, component='shadcn_alert_dial
 
 
 class AlertDialogFooter(ShadcnElement, default_classes='flex flex-col-reverse gap-2 sm:flex-row sm:justify-end'):
-    """The action row at the bottom of an :class:`AlertDialogContent`."""
+    """The action row at the bottom of an :class:`AlertDialogContent`.
+
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
+    :param variant_classes: classes implied by the variant, set by the component itself.
+    """
 
 
 def alert_dialog(value: bool = False, **kwargs: Any) -> AlertDialog:
-    """Create an :class:`AlertDialog`."""
+    """Create an :class:`AlertDialog`.
+
+    :param value: whether the dialog starts out open.
+    """
     return AlertDialog(value, **kwargs)
 
 
 def alert_dialog_trigger(text: str = '', **kwargs: Any) -> AlertDialogTrigger:
-    """Create an :class:`AlertDialogTrigger`."""
+    """Create an :class:`AlertDialogTrigger`.
+
+    :param text: the text to display.
+    """
     return AlertDialogTrigger(text, **kwargs)
 
 
 def alert_dialog_content(title: str | None = None, **kwargs: Any) -> AlertDialogContent:
-    """Create an :class:`AlertDialogContent`."""
+    """Create an :class:`AlertDialogContent`.
+
+    :param title: heading text, rendered for screen readers only when omitted.
+    """
     return AlertDialogContent(title, **kwargs)
 
 
 def alert_dialog_action(text: str = '', **kwargs: Any) -> AlertDialogAction:
-    """Create an :class:`AlertDialogAction`."""
+    """Create an :class:`AlertDialogAction`.
+
+    :param text: the text to display.
+    """
     return AlertDialogAction(text, **kwargs)
 
 
 def alert_dialog_cancel(text: str = '', **kwargs: Any) -> AlertDialogCancel:
-    """Create an :class:`AlertDialogCancel`."""
+    """Create an :class:`AlertDialogCancel`.
+
+    :param text: the text to display.
+    """
     return AlertDialogCancel(text, **kwargs)
 
 

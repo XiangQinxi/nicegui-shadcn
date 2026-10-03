@@ -42,7 +42,11 @@ class RadioGroup(ShadcnElement, ValueElement, component='shadcn_radio_group.vue'
     :param options: the choices, in any of the shapes
         :func:`nicegui_shadcn.elements.base.normalize_options` accepts.
     :param value: the initially selected value.
+    :param orientation: ``'vertical'`` or ``'horizontal'``; how the radio items
+        are stacked.
+    :param disabled: render the component disabled.
     :param on_change: callback invoked with the new value when the selection changes.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
     """
 
     def __init__(self,
@@ -72,7 +76,10 @@ class Slider(ShadcnElement, ValueElement, component='shadcn_slider.vue', default
     :param min: lower bound.
     :param max: upper bound.
     :param step: increment between selectable values.
+    :param orientation: ``'horizontal'`` or ``'vertical'``; how the track runs.
+    :param disabled: render the component disabled.
     :param on_change: callback invoked with the new value while the thumb moves.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
     """
 
     def __init__(self,
@@ -103,7 +110,14 @@ class Slider(ShadcnElement, ValueElement, component='shadcn_slider.vue', default
 
 
 class Toggle(ShadcnElement, ValueElement, component='shadcn_toggle.vue', default_classes=_TOGGLE_CLASSES):
-    """A two-state button, like a switch the user has to press and release."""
+    """A two-state button, like a switch the user has to press and release.
+
+    :param text: the text to display.
+    :param value: the initial pressed state.
+    :param disabled: render the component disabled.
+    :param on_change: callback invoked when the value changes.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
+    """
 
     def __init__(self,
                  text: str = '',
@@ -135,7 +149,14 @@ class ToggleGroup(ShadcnElement, ValueElement, component='shadcn_toggle_group.vu
 
     :param options: the segments, in any of the shapes
         :func:`nicegui_shadcn.elements.base.normalize_options` accepts.
+    :param value: the segment that starts pressed, or a sequence of them when
+        ``multiple`` is set.
     :param multiple: allow several segments to be pressed at once.
+    :param orientation: ``'horizontal'`` or ``'vertical'``; how the segments are
+        laid out.
+    :param disabled: render the component disabled.
+    :param on_change: callback invoked when the value changes.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
     """
 
     def __init__(self,
@@ -165,20 +186,32 @@ class ToggleGroup(ShadcnElement, ValueElement, component='shadcn_toggle_group.vu
 
 
 def radio_group(options: Mapping[str, Any] | Iterable[Any] | None = None, **kwargs: Any) -> RadioGroup:
-    """Create a :class:`RadioGroup`."""
+    """Create a :class:`RadioGroup`.
+
+    :param options: the choices to offer.
+    """
     return RadioGroup(options, **kwargs)
 
 
 def slider(value: float = 0, **kwargs: Any) -> Slider:
-    """Create a :class:`Slider`."""
+    """Create a :class:`Slider`.
+
+    :param value: the initial value.
+    """
     return Slider(value, **kwargs)
 
 
 def toggle(text: str = '', **kwargs: Any) -> Toggle:
-    """Create a :class:`Toggle`."""
+    """Create a :class:`Toggle`.
+
+    :param text: the text to display.
+    """
     return Toggle(text, **kwargs)
 
 
 def toggle_group(options: Mapping[str, Any] | Iterable[Any] | None = None, **kwargs: Any) -> ToggleGroup:
-    """Create a :class:`ToggleGroup`."""
+    """Create a :class:`ToggleGroup`.
+
+    :param options: the choices to offer.
+    """
     return ToggleGroup(options, **kwargs)

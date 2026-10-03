@@ -43,7 +43,12 @@ _BADGE_VARIANTS = {
 
 
 class Badge(ShadcnElement, TextElement, default_classes=_BADGE_BASE):
-    """A small status label."""
+    """A small status label.
+
+    :param text: the text to display.
+    :param variant: ``default``, ``secondary``, ``destructive`` or ``outline``.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
+    """
 
     def __init__(self,
                  text: str = '',
@@ -80,6 +85,7 @@ class Avatar(ShadcnElement, default_classes='relative flex shrink-0 overflow-hid
         fallback text is shown instead.
     :param fallback: initials shown when there is no image.
     :param size: ``default``, ``sm``, ``lg`` or ``xl``.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
     """
 
     def __init__(self,
@@ -146,6 +152,7 @@ class Alert(ShadcnElement, default_classes=_ALERT_BASE):
     :param title: optional shortcut that creates an :class:`AlertTitle` child.
     :param description: optional shortcut that creates an
         :class:`AlertDescription` child.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
 
     Children added with ``with`` are appended after the icon, so the usual
     shadcn composition works too::
@@ -182,14 +189,22 @@ class Alert(ShadcnElement, default_classes=_ALERT_BASE):
 
 
 class AlertTitle(ShadcnElement, TextElement, default_classes='col-start-2 min-h-4 font-medium tracking-tight'):
-    """The title line of an :class:`Alert`."""
+    """The title line of an :class:`Alert`.
+
+    :param text: the text to display.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
+    """
 
     def __init__(self, text: str = '', *, classes: str | Iterable[str] | None = None, **kwargs: Any) -> None:
         super().__init__(tag='div', text=text, classes=classes, **kwargs)
 
 
 class AlertDescription(ShadcnElement, TextElement, default_classes='col-start-2 grid gap-1 text-sm text-muted-foreground'):
-    """The body of an :class:`Alert`."""
+    """The body of an :class:`Alert`.
+
+    :param text: the text to display.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
+    """
 
     def __init__(self, text: str = '', *, classes: str | Iterable[str] | None = None, **kwargs: Any) -> None:
         super().__init__(tag='div', text=text, classes=classes, **kwargs)
@@ -204,6 +219,7 @@ class Progress(ShadcnElement, default_classes='relative h-2 w-full overflow-hidd
     """A horizontal progress bar.
 
     :param value: progress between 0 and 100.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
     """
 
     def __init__(self,
@@ -222,7 +238,11 @@ class Progress(ShadcnElement, default_classes='relative h-2 w-full overflow-hidd
         self.set_value(value)
 
     def set_value(self, value: float) -> None:
-        """Set the progress value (clamped to 0..100)."""
+        """Set the progress value (clamped to 0..100).
+
+        :param value: the new progress between 0 and 100; anything outside that
+            range is clamped to the nearer end.
+        """
         clamped = max(0.0, min(100.0, float(value)))
         self._value = clamped
         self._props['aria-valuenow'] = clamped
@@ -236,63 +256,93 @@ class Progress(ShadcnElement, default_classes='relative h-2 w-full overflow-hidd
 
 
 class Table(ShadcnElement, default_classes='w-full caption-bottom text-sm'):
-    """A shadcn/ui table. Wrap it in ``shadcn.table_container()`` to scroll."""
+    """A shadcn/ui table. Wrap it in ``shadcn.table_container()`` to scroll.
+
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
+    """
 
     def __init__(self, *, classes: str | Iterable[str] | None = None, **kwargs: Any) -> None:
         super().__init__(tag='table', classes=classes, **kwargs)
 
 
 class TableHeader(ShadcnElement, default_classes='[&_tr]:border-b'):
-    """The ``<thead>`` of a :class:`Table`."""
+    """The ``<thead>`` of a :class:`Table`.
+
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
+    """
 
     def __init__(self, *, classes: str | Iterable[str] | None = None, **kwargs: Any) -> None:
         super().__init__(tag='thead', classes=classes, **kwargs)
 
 
 class TableBody(ShadcnElement, default_classes='[&_tr:last-child]:border-0'):
-    """The ``<tbody>`` of a :class:`Table`."""
+    """The ``<tbody>`` of a :class:`Table`.
+
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
+    """
 
     def __init__(self, *, classes: str | Iterable[str] | None = None, **kwargs: Any) -> None:
         super().__init__(tag='tbody', classes=classes, **kwargs)
 
 
 class TableFooter(ShadcnElement, default_classes='border-t bg-muted/50 font-medium'):
-    """The ``<tfoot>`` of a :class:`Table`."""
+    """The ``<tfoot>`` of a :class:`Table`.
+
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
+    """
 
     def __init__(self, *, classes: str | Iterable[str] | None = None, **kwargs: Any) -> None:
         super().__init__(tag='tfoot', classes=classes, **kwargs)
 
 
 class TableRow(ShadcnElement, default_classes='border-b transition-colors hover:bg-muted/50'):
-    """A ``<tr>`` of a :class:`Table`."""
+    """A ``<tr>`` of a :class:`Table`.
+
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
+    """
 
     def __init__(self, *, classes: str | Iterable[str] | None = None, **kwargs: Any) -> None:
         super().__init__(tag='tr', classes=classes, **kwargs)
 
 
 class TableHead(ShadcnElement, TextElement, default_classes='h-10 whitespace-nowrap px-2 text-left align-middle font-medium text-foreground'):
-    """A header ``<th>`` of a :class:`Table`."""
+    """A header ``<th>`` of a :class:`Table`.
+
+    :param text: the text to display.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
+    """
 
     def __init__(self, text: str = '', *, classes: str | Iterable[str] | None = None, **kwargs: Any) -> None:
         super().__init__(tag='th', text=text, classes=classes, **kwargs)
 
 
 class TableCell(ShadcnElement, TextElement, default_classes='whitespace-nowrap p-2 align-middle'):
-    """A body ``<td>`` of a :class:`Table`."""
+    """A body ``<td>`` of a :class:`Table`.
+
+    :param text: the text to display.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
+    """
 
     def __init__(self, text: str = '', *, classes: str | Iterable[str] | None = None, **kwargs: Any) -> None:
         super().__init__(tag='td', text=text, classes=classes, **kwargs)
 
 
 class TableCaption(ShadcnElement, TextElement, default_classes='mt-4 text-sm text-muted-foreground'):
-    """The ``<caption>`` of a :class:`Table`."""
+    """The ``<caption>`` of a :class:`Table`.
+
+    :param text: the text to display.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
+    """
 
     def __init__(self, text: str = '', *, classes: str | Iterable[str] | None = None, **kwargs: Any) -> None:
         super().__init__(tag='caption', text=text, classes=classes, **kwargs)
 
 
 def table_container(*, classes: str | Iterable[str] | None = None, **kwargs: Any) -> ShadcnElement:
-    """Create the scroll container that shadcn wraps every table in."""
+    """Create the scroll container that shadcn wraps every table in.
+
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
+    """
     return ShadcnElement(
         tag='div',
         variant_classes='relative w-full overflow-x-auto',
@@ -307,7 +357,10 @@ def table_container(*, classes: str | Iterable[str] | None = None, **kwargs: Any
 
 
 def badge(text: str = '', **kwargs: Any) -> Badge:
-    """Create a :class:`Badge`."""
+    """Create a :class:`Badge`.
+
+    :param text: the text to display.
+    """
     return Badge(text, **kwargs)
 
 
@@ -322,17 +375,27 @@ def alert(**kwargs: Any) -> Alert:
 
 
 def alert_title(text: str = '', **kwargs: Any) -> AlertTitle:
-    """Create an :class:`AlertTitle`."""
+    """Create an :class:`AlertTitle`.
+
+    :param text: the text to display.
+    """
     return AlertTitle(text, **kwargs)
 
 
 def alert_description(text: str = '', **kwargs: Any) -> AlertDescription:
-    """Create an :class:`AlertDescription`."""
+    """Create an :class:`AlertDescription`.
+
+    :param text: the text to display.
+    """
     return AlertDescription(text, **kwargs)
 
 
 def progress(value: float = 0, **kwargs: Any) -> Progress:
-    """Create a :class:`Progress`."""
+    """Create a :class:`Progress`.
+
+    :param value: the progress percentage in ``0..100``; values outside the
+        range are clamped.
+    """
     return Progress(value, **kwargs)
 
 
@@ -362,15 +425,24 @@ def table_row(**kwargs: Any) -> TableRow:
 
 
 def table_head(text: str = '', **kwargs: Any) -> TableHead:
-    """Create a :class:`TableHead`."""
+    """Create a :class:`TableHead`.
+
+    :param text: the text to display.
+    """
     return TableHead(text, **kwargs)
 
 
 def table_cell(text: str = '', **kwargs: Any) -> TableCell:
-    """Create a :class:`TableCell`."""
+    """Create a :class:`TableCell`.
+
+    :param text: the text to display.
+    """
     return TableCell(text, **kwargs)
 
 
 def table_caption(text: str = '', **kwargs: Any) -> TableCaption:
-    """Create a :class:`TableCaption`."""
+    """Create a :class:`TableCaption`.
+
+    :param text: the text to display.
+    """
     return TableCaption(text, **kwargs)

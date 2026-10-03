@@ -31,6 +31,7 @@ class Direction(ShadcnElement, default_classes=_DIRECTION_CLASSES):
     :param inline: render a ``<span>`` instead of a ``<div>``; with
         ``display: contents`` the choice only matters for HTML validity, so use
         ``inline=True`` inside a paragraph or a heading.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
 
     The direction is inherited, so the outermost :class:`Direction` on the page is
     usually enough; nest another one only to flip a single region.
@@ -59,5 +60,8 @@ class Direction(ShadcnElement, default_classes=_DIRECTION_CLASSES):
 
 
 def direction(direction: str = 'ltr', **kwargs: Any) -> Direction:
-    """Create a :class:`Direction`."""
+    """Create a :class:`Direction`.
+
+    :param direction: ``'ltr'`` or ``'rtl'``.
+    """
     return Direction(direction, **kwargs)

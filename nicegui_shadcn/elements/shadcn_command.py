@@ -1,16 +1,16 @@
 """A command palette: a searchable, grouped list of actions.
 
-```python
-shadcn.command(
-    [
-        {'value': 'calendar', 'label': 'Calendar', 'group': 'Suggestions', 'shortcut': '⌘C'},
-        {'value': 'emoji', 'label': 'Emoji', 'group': 'Suggestions'},
-        {'kind': 'separator'},
-        {'value': 'profile', 'label': 'Profile', 'group': 'Settings', 'shortcut': '⌘P'},
-    ],
-    on_select=lambda e: ui.notify(e.args),
-)
-```
+.. code-block:: python
+
+   shadcn.command(
+       [
+           {'value': 'calendar', 'label': 'Calendar', 'group': 'Suggestions', 'shortcut': '⌘C'},
+           {'value': 'emoji', 'label': 'Emoji', 'group': 'Suggestions'},
+           {'kind': 'separator'},
+           {'value': 'profile', 'label': 'Profile', 'group': 'Settings', 'shortcut': '⌘P'},
+       ],
+       on_select=lambda e: ui.notify(e.args),
+   )
 
 The items are filtered in the browser as the user types, so no server round-trip is
 needed per keystroke. Pass ``filter=False`` to filter on the server instead and
@@ -94,9 +94,11 @@ class Command(ShadcnElement, ValueElement, component='shadcn_command.vue', defau
     :param filter: filter the items in the browser while typing; set this to ``False``
         to filter on the server and use ``on_search`` instead.
     :param autofocus: focus the search field as soon as the element is created.
+    :param aria_label: accessible name of the search field and of the result list.
     :param on_change: callback invoked with the newly selected value.
     :param on_select: callback invoked when a command is chosen.
     :param on_search: callback invoked with the current query while the user types.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
     """
 
     LOOPBACK = False
@@ -133,7 +135,11 @@ class Command(ShadcnElement, ValueElement, component='shadcn_command.vue', defau
         return '' if value is None else str(value)
 
     def set_items(self, items: Mapping[str, Any] | Iterable[Any] | None) -> None:
-        """Replace the commands."""
+        """Replace the commands.
+
+        :param items: the new commands, in any of the shapes the constructor's
+            ``items`` accepts.
+        """
         self._props['items'] = _normalize_commands(items)
         self.update()
 
@@ -142,5 +148,10 @@ def command(
     items: Mapping[str, Any] | Iterable[Any] | None = None,
     **kwargs: Any,
 ) -> Command:
-    """Create a :class:`Command`."""
+    """Create a :class:`Command`.
+
+    :param items: the commands, in any of the shapes accepted by :class:`Command`:
+        a mapping ``{value: label}``, a sequence of strings, a sequence of
+        ``(value, label)`` pairs, or a sequence of mappings.
+    """
     return Command(items, **kwargs)

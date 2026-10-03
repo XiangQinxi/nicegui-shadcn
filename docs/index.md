@@ -30,6 +30,14 @@
 从安装、工作原理，到布局、表单、展示、折叠、浮层与图标——把基础用法完整过一遍。
 :::
 
+:::{grid-item-card} API 参考
+:link: api/index
+:link-type: doc
+:margin: 0
+
+由 Sphinx autodoc 直接从源码 docstring 生成：每个组件类与工厂函数的签名和参数说明。
+:::
+
 :::{grid-item-card} 开始
 :link: start/index
 :link-type: doc
@@ -68,5 +76,6 @@ ui.run()
 :maxdepth: 2
 
 tutorial/index
+api/index
 start/index
 ```

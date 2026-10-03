@@ -44,6 +44,7 @@ class Collapsible(_Openable, ShadcnElement, ValueElement, component='shadcn_coll
     :param value: whether the region starts out open.
     :param disabled: grey out the trigger and refuse to toggle.
     :param on_change: callback invoked with the value-change event when the open state changes; read ``e.value`` for the new state.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
     """
 
     def __init__(self,
@@ -66,9 +67,12 @@ class CollapsibleTrigger(ShadcnElement, TextElement, component='shadcn_collapsib
                          default_classes=_COLLAPSIBLE_TRIGGER_CLASSES):
     """The clickable header of a :class:`Collapsible`.
 
+    :param text: the text to display.
     :param as_child: merge the trigger's behaviour into the single child element
         instead of rendering its own ``<button>`` -- useful for making a whole
         card clickable. The child then has to be a button-like element itself.
+    :param on_click: callback invoked on click.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
     """
 
     def __init__(self,
@@ -88,16 +92,26 @@ class CollapsibleTrigger(ShadcnElement, TextElement, component='shadcn_collapsib
 
 class CollapsibleContent(ShadcnElement, component='shadcn_collapsible_content.vue',
                          default_classes=_COLLAPSIBLE_CONTENT_CLASSES):
-    """The region that expands and collapses."""
+    """The region that expands and collapses.
+
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
+    :param variant_classes: classes implied by the variant, set by the component itself.
+    """
 
 
 def collapsible(value: bool = False, **kwargs: Any) -> Collapsible:
-    """Create a :class:`Collapsible`."""
+    """Create a :class:`Collapsible`.
+
+    :param value: whether the region starts out open.
+    """
     return Collapsible(value, **kwargs)
 
 
 def collapsible_trigger(text: str = '', **kwargs: Any) -> CollapsibleTrigger:
-    """Create a :class:`CollapsibleTrigger`."""
+    """Create a :class:`CollapsibleTrigger`.
+
+    :param text: the text to display.
+    """
     return CollapsibleTrigger(text, **kwargs)
 
 

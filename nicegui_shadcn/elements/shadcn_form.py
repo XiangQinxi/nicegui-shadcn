@@ -28,9 +28,11 @@ __all__ = [
 class Label(ShadcnElement, TextElement, default_classes='flex select-none items-center gap-2 text-sm font-medium leading-none'):
     """A ``<label>`` for a form control.
 
+    :param text: the text to display.
     :param for_: the element (or DOM id) this label belongs to. NiceGUI assigns
         its element ids lazily, so passing the element itself is the reliable
         way to wire up ``for=``.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
     """
 
     def __init__(self,
@@ -74,7 +76,14 @@ class Input(ShadcnElement, ValueElement, component='shadcn_input.vue', default_c
     """A single-line text field.
 
     :param value: the initial value.
+    :param placeholder: text shown while the field is empty.
     :param type: the native input type (``text``, ``password``, ``email``, ...).
+    :param disabled: render the component disabled.
+    :param readonly: render the field read-only, so its value cannot be edited.
+    :param autocomplete: the native ``autocomplete`` hint for the browser, e.g.
+        ``'email'``, ``'current-password'`` or ``'off'``.
+    :param on_change: callback invoked when the value changes.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
     """
 
     LOOPBACK = False
@@ -109,7 +118,16 @@ class Input(ShadcnElement, ValueElement, component='shadcn_input.vue', default_c
 
 
 class Textarea(ShadcnElement, ValueElement, component='shadcn_textarea.vue', default_classes=_TEXTAREA_CLASSES):
-    """A multi-line text field."""
+    """A multi-line text field.
+
+    :param value: the initial value.
+    :param placeholder: text shown while the field is empty.
+    :param rows: how many text rows the field is tall.
+    :param disabled: render the component disabled.
+    :param readonly: render the field read-only, so its value cannot be edited.
+    :param on_change: callback invoked when the value changes.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
+    """
 
     LOOPBACK = False
 
@@ -146,7 +164,13 @@ class Textarea(ShadcnElement, ValueElement, component='shadcn_textarea.vue', def
 
 
 class Checkbox(ShadcnElement, ValueElement, component='shadcn_checkbox.vue', default_classes='inline-flex'):
-    """A checkbox with the shadcn/ui look."""
+    """A checkbox with the shadcn/ui look.
+
+    :param value: the initial checked state.
+    :param disabled: render the component disabled.
+    :param on_change: callback invoked when the value changes.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
+    """
 
     def __init__(self,
                  value: bool = False,
@@ -173,7 +197,13 @@ class Checkbox(ShadcnElement, ValueElement, component='shadcn_checkbox.vue', def
 
 
 class Switch(ShadcnElement, ValueElement, component='shadcn_switch.vue', default_classes='inline-flex'):
-    """An on/off switch with the shadcn/ui look."""
+    """An on/off switch with the shadcn/ui look.
+
+    :param value: the initial on/off state.
+    :param disabled: render the component disabled.
+    :param on_change: callback invoked when the value changes.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
+    """
 
     def __init__(self,
                  value: bool = False,
@@ -205,25 +235,40 @@ class Switch(ShadcnElement, ValueElement, component='shadcn_switch.vue', default
 
 
 def label(text: str = '', **kwargs: Any) -> Label:
-    """Create a :class:`Label`."""
+    """Create a :class:`Label`.
+
+    :param text: the text to display.
+    """
     return Label(text, **kwargs)
 
 
 def input(value: str = '', **kwargs: Any) -> Input:  # noqa: A001 - matches the shadcn/ui name
-    """Create an :class:`Input`."""
+    """Create an :class:`Input`.
+
+    :param value: the initial value.
+    """
     return Input(value, **kwargs)
 
 
 def textarea(value: str = '', **kwargs: Any) -> Textarea:
-    """Create a :class:`Textarea`."""
+    """Create a :class:`Textarea`.
+
+    :param value: the initial value.
+    """
     return Textarea(value, **kwargs)
 
 
 def checkbox(value: bool = False, **kwargs: Any) -> Checkbox:
-    """Create a :class:`Checkbox`."""
+    """Create a :class:`Checkbox`.
+
+    :param value: the initial checked state.
+    """
     return Checkbox(value, **kwargs)
 
 
 def switch(value: bool = False, **kwargs: Any) -> Switch:
-    """Create a :class:`Switch`."""
+    """Create a :class:`Switch`.
+
+    :param value: the initial on/off state.
+    """
     return Switch(value, **kwargs)

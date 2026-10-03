@@ -29,7 +29,11 @@ T = TypeVar('T')
 
 
 def as_class_string(value: str | Iterable[str] | None) -> str:
-    """Normalise ``None``, a string or an iterable of strings to one string."""
+    """Normalise ``None``, a string or an iterable of strings to one string.
+
+    :param value: ``None``, a string or an iterable of strings; ``None`` becomes
+        the empty string and an iterable is joined with single spaces.
+    """
     if value is None:
         return ''
     if isinstance(value, str):
@@ -50,6 +54,8 @@ def normalize_options(options: Mapping[str, Any] | Iterable[Any]) -> list[dict[s
       (``'default'`` or ``'destructive'``).
 
     Everything is coerced to the plain JSON-safe shape the Vue templates expect.
+
+    :param options: the choices to offer, in any of the shapes listed above.
     """
     if isinstance(options, Mapping):
         return [{'value': str(key), 'label': str(value)} for key, value in options.items()]
@@ -78,6 +84,11 @@ def option(kind: str, value: str, options: Mapping[str, T]) -> T:
 
     shadcn/ui spells its variants as string literals; failing loudly with the
     list of valid choices beats a silent fallback that renders nothing.
+
+    :param kind: the name of the option table, used in the error message, e.g.
+        ``'heading level'``.
+    :param value: the value to look up.
+    :param options: the mapping of valid values to their class strings.
     """
     try:
         return options[value]
@@ -117,6 +128,8 @@ class ShadcnElement(Element):
 
         Unlike :meth:`nicegui.element.Element.classes` this resolves conflicts
         instead of appending, so the newly supplied utilities win.
+
+        :param classes: extra utility classes, merged with ``cn()`` semantics.
         """
         merged = tw_merge(' '.join(self._classes), as_class_string(classes))
         self.classes(replace=merged)
@@ -158,6 +171,9 @@ class Text(TextElement):
     NiceGUI's :class:`nicegui.elements.label.Label` renders a ``<div>``, which
     is invalid inside a ``<button>`` or a ``<p>``. Components that need an
     inline text node use this ``<span>`` instead.
+
+    :param text: the text to display.
+    :param tag: the HTML tag to render, ``'span'`` by default.
     """
 
     def __init__(self, text: str = '', *, tag: str = 'span') -> None:

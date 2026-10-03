@@ -63,11 +63,6 @@ include = [
     { path = "AGENT.md", format = ["sdist"] },
     # The documentation site ships with the source too: `docs/conf.py` reads the
     # version out of this file, so a packager can build the exact manual that
-    # matches the release without cloning the repository. `docs/_build/` is
-    # gitignored, and Poetry honours .gitignore for the sdist, so the rendered
-    # output never ends up in the archive.
-    # The documentation site ships with the source too: `docs/conf.py` reads the
-    # version out of this file, so a packager can build the exact manual that
     # matches the release without cloning the repository. The paths are listed
     # one by one because `include` walks a directory wholesale — naming `docs`
     # also ships `docs/_build/`, and Poetry's `exclude` does not filter it back
@@ -77,6 +72,13 @@ include = [
     { path = "docs/Makefile", format = ["sdist"] },
     { path = "docs/make.bat", format = ["sdist"] },
     { path = "docs/index.md", format = ["sdist"] },
+    { path = "docs/api/index.md", format = ["sdist"] },
+    { path = "docs/api/forms.md", format = ["sdist"] },
+    { path = "docs/api/display.md", format = ["sdist"] },
+    { path = "docs/api/overlays.md", format = ["sdist"] },
+    { path = "docs/api/navigation.md", format = ["sdist"] },
+    { path = "docs/api/primitives.md", format = ["sdist"] },
+    { path = "docs/api/theming.md", format = ["sdist"] },
     { path = "docs/*.png", format = ["sdist"] },
     { path = "docs/_static", format = ["sdist"] },
     { path = "docs/tutorial", format = ["sdist"] },

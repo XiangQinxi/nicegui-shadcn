@@ -47,6 +47,7 @@ class ToastProvider(ShadcnElement, component='shadcn_toast_provider.vue'):
     :param duration: default milliseconds each toast stays up. Pass ``0`` to
         keep toasts up until they are closed by hand.
     :param swipe_direction: the direction a toast can be swiped away towards.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
     """
 
     def __init__(self,
@@ -76,6 +77,7 @@ class Toast(_Openable, ShadcnElement, ValueElement, component='shadcn_toast.vue'
     :param on_change: callback invoked with the value-change event when the
         toast opens or closes, which is how a timeout or a swipe reaches Python;
         read ``e.value`` for the new state.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
     """
 
     def __init__(self,
@@ -109,5 +111,8 @@ def toast_provider(**kwargs: Any) -> ToastProvider:
 
 
 def toast(title: str = '', **kwargs: Any) -> Toast:
-    """Create a :class:`Toast`."""
+    """Create a :class:`Toast`.
+
+    :param title: the bold first line.
+    """
     return Toast(title, **kwargs)

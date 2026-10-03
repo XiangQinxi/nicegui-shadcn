@@ -56,6 +56,7 @@ class Accordion(ShadcnElement, ValueElement, component='shadcn_accordion.vue', d
     :param collapsible: allow closing the open section again (single mode only).
     :param orientation: ``'vertical'`` or ``'horizontal'``.
     :param on_change: callback invoked with the new value whenever it changes.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
     """
 
     def __init__(self,
@@ -78,7 +79,13 @@ class Accordion(ShadcnElement, ValueElement, component='shadcn_accordion.vue', d
 
 
 class AccordionItem(ShadcnElement, component='shadcn_accordion_item.vue', default_classes=_ACCORDION_ITEM_CLASSES):
-    """One collapsible section; put a trigger and a content element inside."""
+    """One collapsible section; put a trigger and a content element inside.
+
+    :param value: the value identifying this section, matched against the
+        value of the containing :class:`Accordion`.
+    :param disabled: render the component disabled.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
+    """
 
     def __init__(self,
                  value: str,
@@ -98,6 +105,9 @@ class AccordionTrigger(ShadcnElement, TextElement, component='shadcn_accordion_t
 
     Classes given here end up on the ``<button>``, not on the surrounding
     ``<h3>``, because the template forwards ``$attrs`` to the button.
+
+    :param text: the text to display.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
     """
 
     def __init__(self,
@@ -110,21 +120,35 @@ class AccordionTrigger(ShadcnElement, TextElement, component='shadcn_accordion_t
 
 
 class AccordionContent(ShadcnElement, component='shadcn_accordion_content.vue', default_classes=_ACCORDION_CONTENT_CLASSES):
-    """The body of an :class:`AccordionItem`."""
+    """The body of an :class:`AccordionItem`.
+
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
+    :param variant_classes: classes implied by the variant, set by the component itself.
+    """
 
 
 def accordion(value: str | Iterable[str] | None = None, **kwargs: Any) -> Accordion:
-    """Create an :class:`Accordion`."""
+    """Create an :class:`Accordion`.
+
+    :param value: the value of the item that starts open (``multiple=True``: a list of values).
+    """
     return Accordion(value, **kwargs)
 
 
 def accordion_item(value: str, **kwargs: Any) -> AccordionItem:
-    """Create an :class:`AccordionItem`."""
+    """Create an :class:`AccordionItem`.
+
+    :param value: the value identifying this section, matched against the
+        value of the containing :class:`Accordion`.
+    """
     return AccordionItem(value, **kwargs)
 
 
 def accordion_trigger(text: str = '', **kwargs: Any) -> AccordionTrigger:
-    """Create an :class:`AccordionTrigger`."""
+    """Create an :class:`AccordionTrigger`.
+
+    :param text: the text to display.
+    """
     return AccordionTrigger(text, **kwargs)
 
 

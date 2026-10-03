@@ -28,6 +28,7 @@ class HoverCard(_Openable, ShadcnElement, ValueElement, component='shadcn_hover_
     :param open_delay: milliseconds to wait before opening.
     :param close_delay: milliseconds to wait before closing once the pointer leaves.
     :param on_change: callback invoked with the value-change event when the open state changes; read ``e.value`` for the new state.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
     """
 
     def __init__(self,
@@ -57,6 +58,9 @@ class HoverCardTrigger(ShadcnElement, component='shadcn_hover_card_trigger.vue')
             shadcn.button('@ada', variant='link')
 
     Pass ``as_child=False`` to wrap the content in an anchor of our own instead.
+
+    :param as_child: render the child element instead of a wrapper.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
     """
 
     def __init__(self,
@@ -74,6 +78,7 @@ class HoverCardContent(ShadcnElement, component='shadcn_hover_card_content.vue')
 
     :param side: ``'top'``, ``'right'``, ``'bottom'`` or ``'left'``.
     :param align: ``'start'``, ``'center'`` or ``'end'``.
+    :param classes: classes for the panel itself, which lives in a portal.
     """
 
     def __init__(self,
@@ -89,7 +94,11 @@ class HoverCardContent(ShadcnElement, component='shadcn_hover_card_content.vue')
 
 
 def hover_card(value: bool | None = None, **kwargs: Any) -> HoverCard:
-    """Create a :class:`HoverCard`."""
+    """Create a :class:`HoverCard`.
+
+    :param value: force the card open (``True``) or closed (``False``); leave it
+        as ``None`` to let the pointer decide.
+    """
     return HoverCard(value, **kwargs)
 
 

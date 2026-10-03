@@ -7,7 +7,14 @@ tables of README.md / README_zh.md directly.
 from __future__ import annotations
 
 import re
+import sys
 from pathlib import Path
+
+# autodoc imports the package to read its docstrings. ``python -m sphinx`` puts
+# the current directory on sys.path, but the ``sphinx-build`` entry point does
+# not, so the checkout is added explicitly: a documentation build from a fresh
+# clone then works without installing the package first.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 # -- Project information -----------------------------------------------------
 
@@ -43,8 +50,11 @@ version = ".".join(release.split(".")[:2])
 
 extensions = [
     "myst_parser",
+    "sphinx.ext.autodoc",
     "sphinx.ext.autosectionlabel",
     "sphinx.ext.intersphinx",
+    "sphinx.ext.napoleon",
+    "sphinx.ext.viewcode",
     "sphinx_design",
     "sphinx_copybutton",
 ]
@@ -79,6 +89,32 @@ intersphinx_mapping = {
 }
 
 copybutton_exclude = ".linenos, .gp, .go"
+
+
+# -- API reference (sphinx.ext.autodoc) ---------------------------------------
+#
+# The pages under ``docs/api/`` contain nothing but ``automodule`` directives, so
+# the API reference is read straight out of the source docstrings and cannot
+# drift from the code.  The house style is a reStructuredText field list::
+#
+#     :param text: the label of the button.
+#
+# which autodoc renders natively.  Napoleon is switched on as well, so a
+# contributor who reaches for a Google- or NumPy-style section still gets
+# formatted output instead of a raw paragraph.
+autoclass_content = "class"
+autodoc_member_order = "bysource"
+autodoc_default_options = {
+    "members": True,
+    "show-inheritance": True,
+}
+# Without this, a member that has no docstring of its own silently inherits its
+# parent's, which is how every element here ended up advertised as a
+# "Generic Element".
+autodoc_inherit_docstrings = False
+napoleon_google_docstring = True
+napoleon_numpy_docstring = True
+napoleon_use_rtype = False
 
 html_static_path = ["_static"]
 html_css_files = ["custom.css"]

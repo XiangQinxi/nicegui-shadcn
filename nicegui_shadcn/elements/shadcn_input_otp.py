@@ -46,6 +46,7 @@ class InputOTP(ShadcnElement, ValueElement, component='shadcn_input_otp.vue'):
     :param aria_label: the accessible name of the underlying text field.
     :param on_change: callback invoked with the value-change event when the code
         changes; read ``e.value`` for the new code.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
     """
 
     LOOPBACK = False
@@ -89,5 +90,8 @@ class InputOTP(ShadcnElement, ValueElement, component='shadcn_input_otp.vue'):
 
 
 def input_otp(value: str = '', **kwargs: Any) -> InputOTP:
-    """Create an :class:`InputOTP`."""
+    """Create an :class:`InputOTP`.
+
+    :param value: the initial code.
+    """
     return InputOTP(value, **kwargs)

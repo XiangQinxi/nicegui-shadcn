@@ -1,12 +1,12 @@
 """An autocomplete input combining a trigger button with a searchable option list.
 
-```python
-shadcn.combobox(
-    ['Next.js', 'SvelteKit', 'Nuxt.js', 'Remix', 'Astro'],
-    placeholder='Select framework...',
-    on_change=lambda e: ui.notify(e.value),
-)
-```
+.. code-block:: python
+
+   shadcn.combobox(
+       ['Next.js', 'SvelteKit', 'Nuxt.js', 'Remix', 'Astro'],
+       placeholder='Select framework...',
+       on_change=lambda e: ui.notify(e.value),
+   )
 
 The options are filtered in the browser as the user types, so no server round-trip is
 needed per keystroke.
@@ -37,8 +37,10 @@ class Combobox(ShadcnElement, ValueElement, component='shadcn_combobox.vue', def
     :param search_placeholder: placeholder of the search field inside the panel.
     :param empty_text: text shown when the search matches nothing.
     :param filter: filter the options in the browser while typing.
+    :param aria_label: the accessible name of the trigger and of the option list.
     :param on_change: callback invoked with the newly selected value.
     :param on_select: callback invoked when an option is chosen.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
     """
 
     LOOPBACK = False
@@ -72,7 +74,11 @@ class Combobox(ShadcnElement, ValueElement, component='shadcn_combobox.vue', def
         return '' if value is None else str(value)
 
     def set_options(self, options: Mapping[str, Any] | Iterable[Any] | None) -> None:
-        """Replace the options."""
+        """Replace the options.
+
+        :param options: the new options, in any of the shapes
+            :func:`nicegui_shadcn.elements.base.normalize_options` accepts.
+        """
         self._props['options'] = normalize_options(options or [])
         self.update()
 
@@ -81,5 +87,8 @@ def combobox(
     options: Mapping[str, Any] | Iterable[Any] | None = None,
     **kwargs: Any,
 ) -> Combobox:
-    """Create a :class:`Combobox`."""
+    """Create a :class:`Combobox`.
+
+    :param options: the choices to offer.
+    """
     return Combobox(options, **kwargs)

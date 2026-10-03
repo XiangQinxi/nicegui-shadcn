@@ -31,6 +31,7 @@ class Sheet(_Openable, ShadcnElement, ValueElement, component='shadcn_dialog.vue
 
     :param value: whether the sheet starts out open.
     :param on_change: callback invoked with the value-change event when the open state changes; read ``e.value`` for the new state.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
     """
 
     def __init__(self,
@@ -48,7 +49,13 @@ class Sheet(_Openable, ShadcnElement, ValueElement, component='shadcn_dialog.vue
 
 class SheetTrigger(ShadcnElement, TextElement, component='shadcn_dialog_trigger.vue',
                    default_classes=_button_classes('outline')):
-    """The element that opens a :class:`Sheet` when clicked."""
+    """The element that opens a :class:`Sheet` when clicked.
+
+    :param text: the text to display.
+    :param as_child: render the child element instead of a wrapper.
+    :param on_click: callback invoked on click.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
+    """
 
     def __init__(self,
                  text: str = '',
@@ -74,6 +81,8 @@ class SheetContent(ShadcnElement, component='shadcn_sheet_content.vue'):
     :param side: which edge to slide in from: ``'right'`` (default), ``'left'``,
         ``'top'`` or ``'bottom'``.
     :param closable: render the small close button in the panel corner.
+    :param aria_label: fallback heading used when ``title`` is empty.
+    :param classes: classes for the panel itself, which lives in a portal.
     """
 
     def __init__(self,
@@ -96,21 +105,34 @@ class SheetContent(ShadcnElement, component='shadcn_sheet_content.vue'):
 
 
 class SheetFooter(ShadcnElement, default_classes='flex flex-col-reverse gap-2 sm:flex-row sm:justify-end'):
-    """The action row at the bottom of a :class:`SheetContent`."""
+    """The action row at the bottom of a :class:`SheetContent`.
+
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
+    :param variant_classes: classes implied by the variant, set by the component itself.
+    """
 
 
 def sheet(value: bool = False, **kwargs: Any) -> Sheet:
-    """Create a :class:`Sheet`."""
+    """Create a :class:`Sheet`.
+
+    :param value: whether the sheet starts out open.
+    """
     return Sheet(value, **kwargs)
 
 
 def sheet_trigger(text: str = '', **kwargs: Any) -> SheetTrigger:
-    """Create a :class:`SheetTrigger`."""
+    """Create a :class:`SheetTrigger`.
+
+    :param text: the text to display.
+    """
     return SheetTrigger(text, **kwargs)
 
 
 def sheet_content(title: str | None = None, **kwargs: Any) -> SheetContent:
-    """Create a :class:`SheetContent`."""
+    """Create a :class:`SheetContent`.
+
+    :param title: heading text, rendered for screen readers only when omitted.
+    """
     return SheetContent(title, **kwargs)
 
 

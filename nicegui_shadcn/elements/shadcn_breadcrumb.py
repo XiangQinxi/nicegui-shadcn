@@ -42,6 +42,8 @@ class Breadcrumb(ShadcnElement, default_classes=_BREADCRUMB_CLASSES):
 
     The accessible name is fixed to ``'breadcrumb'``, which is what tells a screen
     reader that this group of links is a trail.
+
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
     """
 
     def __init__(self,
@@ -54,7 +56,10 @@ class Breadcrumb(ShadcnElement, default_classes=_BREADCRUMB_CLASSES):
 
 
 class BreadcrumbList(ShadcnElement, default_classes=_BREADCRUMB_LIST_CLASSES):
-    """The ``<ol>`` of :class:`BreadcrumbItem` entries."""
+    """The ``<ol>`` of :class:`BreadcrumbItem` entries.
+
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
+    """
 
     def __init__(self,
                  *,
@@ -65,7 +70,10 @@ class BreadcrumbList(ShadcnElement, default_classes=_BREADCRUMB_LIST_CLASSES):
 
 
 class BreadcrumbItem(ShadcnElement, default_classes=_BREADCRUMB_ITEM_CLASSES):
-    """One ``<li>`` in the trail."""
+    """One ``<li>`` in the trail.
+
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
+    """
 
     def __init__(self,
                  *,
@@ -81,6 +89,7 @@ class BreadcrumbLink(ShadcnElement, TextElement, default_classes=_BREADCRUMB_LIN
     :param text: the label.
     :param href: target URL; without one the ``<a>`` is not focusable, so give it
         a real target or use :class:`BreadcrumbPage` for the current step.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
     """
 
     def __init__(self,
@@ -101,6 +110,9 @@ class BreadcrumbPage(ShadcnElement, TextElement, default_classes=_BREADCRUMB_PAG
 
     It is rendered as a span marked ``aria-current="page"`` rather than as a link,
     because there is nowhere to navigate to.
+
+    :param text: the text to display.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
     """
 
     def __init__(self,
@@ -121,6 +133,7 @@ class BreadcrumbSeparator(ShadcnElement, Html, default_classes=_BREADCRUMB_SEPAR
 
     :param icon: name of the glyph to draw, or ``None`` for a bare ``<li>`` you
         can fill yourself.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
     """
 
     def __init__(self,
@@ -141,6 +154,8 @@ class BreadcrumbEllipsis(ShadcnElement, Html, default_classes=_BREADCRUMB_ELLIPS
     The element is presentational, so the three dots are not read out, but the
     visually hidden ``More`` text inside it is -- which is why it carries no
     ``aria-hidden`` of its own (that would swallow the whole subtree).
+
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
     """
 
     def __init__(self,
@@ -172,17 +187,27 @@ def breadcrumb_item(**kwargs: Any) -> BreadcrumbItem:
 
 
 def breadcrumb_link(text: str = '', **kwargs: Any) -> BreadcrumbLink:
-    """Create a :class:`BreadcrumbLink`."""
+    """Create a :class:`BreadcrumbLink`.
+
+    :param text: the label of the link.
+    """
     return BreadcrumbLink(text, **kwargs)
 
 
 def breadcrumb_page(text: str = '', **kwargs: Any) -> BreadcrumbPage:
-    """Create a :class:`BreadcrumbPage`."""
+    """Create a :class:`BreadcrumbPage`.
+
+    :param text: the text to display.
+    """
     return BreadcrumbPage(text, **kwargs)
 
 
 def breadcrumb_separator(*, icon: str | None = 'chevron-right', **kwargs: Any) -> BreadcrumbSeparator:
-    """Create a :class:`BreadcrumbSeparator`."""
+    """Create a :class:`BreadcrumbSeparator`.
+
+    :param icon: name of the glyph to draw, or ``None`` for a bare ``<li>``
+        you can fill yourself; defaults to ``'chevron-right'``.
+    """
     return BreadcrumbSeparator(icon=icon, **kwargs)
 
 

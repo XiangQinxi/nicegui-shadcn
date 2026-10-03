@@ -25,6 +25,7 @@ class Pagination(ShadcnElement, ValueElement, component='shadcn_pagination.vue')
         one before the range is collapsed into an ellipsis.
     :param on_change: callback invoked with the value-change event when another
         page is chosen; read ``e.value`` for the new page number.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
     """
 
     def __init__(self,
@@ -55,5 +56,9 @@ class Pagination(ShadcnElement, ValueElement, component='shadcn_pagination.vue')
 
 
 def pagination(page: int = 1, total: int = 1, **kwargs: Any) -> Pagination:
-    """Create a :class:`Pagination`."""
+    """Create a :class:`Pagination`.
+
+    :param page: the page to show as current, counting from 1.
+    :param total: how many pages there are.
+    """
     return Pagination(page, total, **kwargs)

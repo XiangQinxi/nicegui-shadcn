@@ -61,6 +61,7 @@ class Tabs(ShadcnElement, ValueElement, component='shadcn_tabs.vue', default_cla
     :param value: the value of the initially selected tab.
     :param orientation: ``'horizontal'`` or ``'vertical'``.
     :param on_change: callback invoked with the new value whenever the selection changes.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
     """
 
     def __init__(self,
@@ -88,6 +89,8 @@ class TabsList(ShadcnElement, component='shadcn_tabs_list.vue', default_classes=
         ``{'account': 'Account'}`` mapping or ``['account', 'password']`` list is
         usually enough; use mappings with ``value``/``label``/``disabled`` when a
         tab needs a different label from its value or has to be disabled.
+    :param orientation: ``'horizontal'`` or ``'vertical'``.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
     """
 
     def __init__(self,
@@ -103,13 +106,22 @@ class TabsList(ShadcnElement, component='shadcn_tabs_list.vue', default_classes=
         self._props['triggerClasses'] = _TABS_TRIGGER_CLASSES
 
     def set_tabs(self, tabs: Mapping[str, Any] | Iterable[Any]) -> None:
-        """Replace the list of tabs."""
+        """Replace the list of tabs.
+
+        :param tabs: the new tabs, in any of the shapes
+            :func:`nicegui_shadcn.elements.base.normalize_options` accepts.
+        """
         self._props['tabs'] = normalize_options(tabs)
         self.update()
 
 
 class TabsContent(ShadcnElement, component='shadcn_tabs_content.vue', default_classes=_TABS_CONTENT_CLASSES):
-    """The panel belonging to one tab value."""
+    """The panel belonging to one tab value.
+
+    :param value: the value of the tab this panel belongs to; it has to match an
+        entry of the :class:`TabsList`.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
+    """
 
     def __init__(self,
                  value: str,
@@ -122,15 +134,25 @@ class TabsContent(ShadcnElement, component='shadcn_tabs_content.vue', default_cl
 
 
 def tabs(value: str | int | None = None, **kwargs: Any) -> Tabs:
-    """Create a :class:`Tabs`."""
+    """Create a :class:`Tabs`.
+
+    :param value: the value of the initially selected tab.
+    """
     return Tabs(value, **kwargs)
 
 
 def tabs_list(tabs: Mapping[str, Any] | Iterable[Any] | None = None, **kwargs: Any) -> TabsList:
-    """Create a :class:`TabsList`."""
+    """Create a :class:`TabsList`.
+
+    :param tabs: the tabs, in any of the shapes
+        :func:`nicegui_shadcn.elements.base.normalize_options` accepts.
+    """
     return TabsList(tabs, **kwargs)
 
 
 def tabs_content(value: str, **kwargs: Any) -> TabsContent:
-    """Create a :class:`TabsContent`."""
+    """Create a :class:`TabsContent`.
+
+    :param value: the value of the tab this panel belongs to.
+    """
     return TabsContent(value, **kwargs)

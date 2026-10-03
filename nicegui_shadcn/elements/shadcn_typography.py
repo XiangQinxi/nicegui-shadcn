@@ -51,6 +51,7 @@ class Heading(ShadcnElement, TextElement):
     :param level: 1 to 4; each level carries the size and weight shadcn/ui gives it.
         Use ``classes=`` to change the scale, and pick the level by document outline
         rather than by size.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
     """
 
     def __init__(self,
@@ -73,7 +74,11 @@ class Heading(ShadcnElement, TextElement):
 
 
 class Paragraph(ShadcnElement, TextElement, default_classes=_PARAGRAPH_CLASSES):
-    """A body paragraph with the leading and spacing shadcn/ui uses."""
+    """A body paragraph with the leading and spacing shadcn/ui uses.
+
+    :param text: the text to display.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
+    """
 
     def __init__(self,
                  text: str = '',
@@ -86,7 +91,11 @@ class Paragraph(ShadcnElement, TextElement, default_classes=_PARAGRAPH_CLASSES):
 
 
 class Lead(ShadcnElement, TextElement, default_classes=_LEAD_CLASSES):
-    """The larger, muted opening line under a page title."""
+    """The larger, muted opening line under a page title.
+
+    :param text: the text to display.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
+    """
 
     def __init__(self,
                  text: str = '',
@@ -99,7 +108,11 @@ class Lead(ShadcnElement, TextElement, default_classes=_LEAD_CLASSES):
 
 
 class Large(ShadcnElement, TextElement, default_classes=_LARGE_CLASSES):
-    """Emphasised text, one step below a heading."""
+    """Emphasised text, one step below a heading.
+
+    :param text: the text to display.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
+    """
 
     def __init__(self,
                  text: str = '',
@@ -111,7 +124,11 @@ class Large(ShadcnElement, TextElement, default_classes=_LARGE_CLASSES):
 
 
 class Small(ShadcnElement, TextElement, default_classes=_SMALL_CLASSES):
-    """Small print, rendered as the semantic ``<small>`` element."""
+    """Small print, rendered as the semantic ``<small>`` element.
+
+    :param text: the text to display.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
+    """
 
     def __init__(self,
                  text: str = '',
@@ -124,7 +141,11 @@ class Small(ShadcnElement, TextElement, default_classes=_SMALL_CLASSES):
 
 
 class Muted(ShadcnElement, TextElement, default_classes=_MUTED_CLASSES):
-    """Secondary text: captions, hints, timestamps."""
+    """Secondary text: captions, hints, timestamps.
+
+    :param text: the text to display.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
+    """
 
     def __init__(self,
                  text: str = '',
@@ -137,7 +158,11 @@ class Muted(ShadcnElement, TextElement, default_classes=_MUTED_CLASSES):
 
 
 class Blockquote(ShadcnElement, TextElement, default_classes=_BLOCKQUOTE_CLASSES):
-    """A quotation, set off by a left rule."""
+    """A quotation, set off by a left rule.
+
+    :param text: the text to display.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
+    """
 
     def __init__(self,
                  text: str = '',
@@ -150,7 +175,11 @@ class Blockquote(ShadcnElement, TextElement, default_classes=_BLOCKQUOTE_CLASSES
 
 
 class InlineCode(ShadcnElement, TextElement, default_classes=_INLINE_CODE_CLASSES):
-    """A code snippet inside a sentence, rendered as ``<code>``."""
+    """A code snippet inside a sentence, rendered as ``<code>``.
+
+    :param text: the text to display.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
+    """
 
     def __init__(self,
                  text: str = '',
@@ -163,7 +192,10 @@ class InlineCode(ShadcnElement, TextElement, default_classes=_INLINE_CODE_CLASSE
 
 
 class BulletList(ShadcnElement, default_classes=_BULLET_LIST_CLASSES):
-    """A ``<ul>`` with the shadcn/ui markers and item spacing."""
+    """A ``<ul>`` with the shadcn/ui markers and item spacing.
+
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
+    """
 
     def __init__(self,
                  *,
@@ -174,62 +206,99 @@ class BulletList(ShadcnElement, default_classes=_BULLET_LIST_CLASSES):
 
 
 def heading(text: str = '', *, level: int = 1, **kwargs: Any) -> Heading:
-    """Create a :class:`Heading`."""
+    """Create a :class:`Heading`.
+
+    :param text: the heading.
+    :param level: 1 to 4; each level carries the size and weight shadcn/ui gives it.
+    """
     return Heading(text, level=level, **kwargs)
 
 
 def h1(text: str = '', **kwargs: Any) -> Heading:
-    """Create a first-level :class:`Heading`."""
+    """Create a first-level :class:`Heading`.
+
+    :param text: the heading.
+    """
     return Heading(text, level=1, **kwargs)
 
 
 def h2(text: str = '', **kwargs: Any) -> Heading:
-    """Create a second-level :class:`Heading`."""
+    """Create a second-level :class:`Heading`.
+
+    :param text: the heading.
+    """
     return Heading(text, level=2, **kwargs)
 
 
 def h3(text: str = '', **kwargs: Any) -> Heading:
-    """Create a third-level :class:`Heading`."""
+    """Create a third-level :class:`Heading`.
+
+    :param text: the heading.
+    """
     return Heading(text, level=3, **kwargs)
 
 
 def h4(text: str = '', **kwargs: Any) -> Heading:
-    """Create a fourth-level :class:`Heading`."""
+    """Create a fourth-level :class:`Heading`.
+
+    :param text: the heading.
+    """
     return Heading(text, level=4, **kwargs)
 
 
 def paragraph(text: str = '', **kwargs: Any) -> Paragraph:
-    """Create a :class:`Paragraph`."""
+    """Create a :class:`Paragraph`.
+
+    :param text: the text to display.
+    """
     return Paragraph(text, **kwargs)
 
 
 def lead(text: str = '', **kwargs: Any) -> Lead:
-    """Create a :class:`Lead`."""
+    """Create a :class:`Lead`.
+
+    :param text: the text to display.
+    """
     return Lead(text, **kwargs)
 
 
 def large(text: str = '', **kwargs: Any) -> Large:
-    """Create a :class:`Large`."""
+    """Create a :class:`Large`.
+
+    :param text: the text to display.
+    """
     return Large(text, **kwargs)
 
 
 def small(text: str = '', **kwargs: Any) -> Small:
-    """Create a :class:`Small`."""
+    """Create a :class:`Small`.
+
+    :param text: the text to display.
+    """
     return Small(text, **kwargs)
 
 
 def muted(text: str = '', **kwargs: Any) -> Muted:
-    """Create a :class:`Muted`."""
+    """Create a :class:`Muted`.
+
+    :param text: the text to display.
+    """
     return Muted(text, **kwargs)
 
 
 def blockquote(text: str = '', **kwargs: Any) -> Blockquote:
-    """Create a :class:`Blockquote`."""
+    """Create a :class:`Blockquote`.
+
+    :param text: the text to display.
+    """
     return Blockquote(text, **kwargs)
 
 
 def inline_code(text: str = '', **kwargs: Any) -> InlineCode:
-    """Create an :class:`InlineCode`."""
+    """Create an :class:`InlineCode`.
+
+    :param text: the text to display.
+    """
     return InlineCode(text, **kwargs)
 
 

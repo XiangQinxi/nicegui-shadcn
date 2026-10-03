@@ -29,6 +29,7 @@ class Select(ShadcnElement, ValueElement, component='shadcn_select.vue'):
     :param placeholder: text shown while nothing is selected.
     :param disabled: render the control disabled.
     :param on_change: callback invoked with the new value when the selection changes.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
     """
 
     def __init__(self,
@@ -53,11 +54,18 @@ class Select(ShadcnElement, ValueElement, component='shadcn_select.vue'):
         return '' if value is None else str(value)
 
     def set_options(self, options: Mapping[str, Any] | Iterable[Any]) -> None:
-        """Replace the list of choices."""
+        """Replace the list of choices.
+
+        :param options: the new choices, in any of the shapes
+            :func:`nicegui_shadcn.elements.base.normalize_options` accepts.
+        """
         self._props['options'] = normalize_options(options)
         self.update()
 
 
 def select(options: Mapping[str, Any] | Iterable[Any] | None = None, **kwargs: Any) -> Select:
-    """Create a :class:`Select`."""
+    """Create a :class:`Select`.
+
+    :param options: the choices to offer.
+    """
     return Select(options, **kwargs)

@@ -63,7 +63,10 @@ _ITEM_SEPARATOR_CLASSES = 'bg-border -mx-4 h-px shrink-0'
 
 
 class ItemGroup(ShadcnElement, default_classes=_ITEM_GROUP_CLASSES):
-    """A vertical stack of :class:`Item` rows that reads as one list."""
+    """A vertical stack of :class:`Item` rows that reads as one list.
+
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
+    """
 
     def __init__(self,
                  *,
@@ -80,6 +83,7 @@ class Item(ShadcnElement, default_classes=_ITEM_BASE):
     :param variant: ``'default'`` is borderless, ``'outline'`` draws the border and
         ``'muted'`` fills the row with the muted colour.
     :param size: ``'default'`` or ``'sm'`` for tighter padding.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
     """
 
     def __init__(self,
@@ -107,6 +111,7 @@ class ItemMedia(ShadcnElement, default_classes=_ITEM_MEDIA_CLASSES):
 
     :param variant: ``'default'`` leaves the box bare, ``'icon'`` puts the glyph on a
         muted rounded square and ``'image'`` clips a picture to a rounded square.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
     """
 
     def __init__(self,
@@ -124,7 +129,10 @@ class ItemMedia(ShadcnElement, default_classes=_ITEM_MEDIA_CLASSES):
 
 
 class ItemContent(ShadcnElement, default_classes=_ITEM_CONTENT_CLASSES):
-    """The stretchy column holding an :class:`ItemTitle` and :class:`ItemDescription`."""
+    """The stretchy column holding an :class:`ItemTitle` and :class:`ItemDescription`.
+
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
+    """
 
     def __init__(self,
                  *,
@@ -136,7 +144,11 @@ class ItemContent(ShadcnElement, default_classes=_ITEM_CONTENT_CLASSES):
 
 
 class ItemTitle(ShadcnElement, TextElement, default_classes=_ITEM_TITLE_CLASSES):
-    """The primary line of an :class:`Item`."""
+    """The primary line of an :class:`Item`.
+
+    :param text: the text to display.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
+    """
 
     def __init__(self,
                  text: str = '',
@@ -149,7 +161,11 @@ class ItemTitle(ShadcnElement, TextElement, default_classes=_ITEM_TITLE_CLASSES)
 
 
 class ItemDescription(ShadcnElement, TextElement, default_classes=_ITEM_DESCRIPTION_CLASSES):
-    """The secondary line, clipped to two lines."""
+    """The secondary line, clipped to two lines.
+
+    :param text: the text to display.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
+    """
 
     def __init__(self,
                  text: str = '',
@@ -162,7 +178,10 @@ class ItemDescription(ShadcnElement, TextElement, default_classes=_ITEM_DESCRIPT
 
 
 class ItemActions(ShadcnElement, default_classes=_ITEM_ACTIONS_CLASSES):
-    """The trailing buttons or controls of an :class:`Item`."""
+    """The trailing buttons or controls of an :class:`Item`.
+
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
+    """
 
     def __init__(self,
                  *,
@@ -174,7 +193,10 @@ class ItemActions(ShadcnElement, default_classes=_ITEM_ACTIONS_CLASSES):
 
 
 class ItemHeader(ShadcnElement, default_classes=_ITEM_HEADER_CLASSES):
-    """A full-width line above the row's main content."""
+    """A full-width line above the row's main content.
+
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
+    """
 
     def __init__(self,
                  *,
@@ -186,7 +208,10 @@ class ItemHeader(ShadcnElement, default_classes=_ITEM_HEADER_CLASSES):
 
 
 class ItemFooter(ShadcnElement, default_classes=_ITEM_FOOTER_CLASSES):
-    """A full-width line below the row's main content."""
+    """A full-width line below the row's main content.
+
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
+    """
 
     def __init__(self,
                  *,
@@ -198,7 +223,10 @@ class ItemFooter(ShadcnElement, default_classes=_ITEM_FOOTER_CLASSES):
 
 
 class ItemSeparator(ShadcnElement, default_classes=_ITEM_SEPARATOR_CLASSES):
-    """A hairline between two rows of an :class:`ItemGroup`."""
+    """A hairline between two rows of an :class:`ItemGroup`.
+
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
+    """
 
     def __init__(self,
                  *,
@@ -216,12 +244,21 @@ def item_group(**kwargs: Any) -> ItemGroup:
 
 
 def item(*, variant: str = 'default', size: str = 'default', **kwargs: Any) -> Item:
-    """Create an :class:`Item`."""
+    """Create an :class:`Item`.
+
+    :param variant: ``'default'`` is borderless, ``'outline'`` draws the border and
+        ``'muted'`` fills the row with the muted colour.
+    :param size: ``'default'`` or ``'sm'`` for tighter padding.
+    """
     return Item(variant=variant, size=size, **kwargs)
 
 
 def item_media(*, variant: str = 'default', **kwargs: Any) -> ItemMedia:
-    """Create an :class:`ItemMedia`."""
+    """Create an :class:`ItemMedia`.
+
+    :param variant: ``'default'`` leaves the box bare, ``'icon'`` puts the glyph on a
+        muted rounded square and ``'image'`` clips a picture to a rounded square.
+    """
     return ItemMedia(variant=variant, **kwargs)
 
 
@@ -231,12 +268,18 @@ def item_content(**kwargs: Any) -> ItemContent:
 
 
 def item_title(text: str = '', **kwargs: Any) -> ItemTitle:
-    """Create an :class:`ItemTitle`."""
+    """Create an :class:`ItemTitle`.
+
+    :param text: the text to display.
+    """
     return ItemTitle(text, **kwargs)
 
 
 def item_description(text: str = '', **kwargs: Any) -> ItemDescription:
-    """Create an :class:`ItemDescription`."""
+    """Create an :class:`ItemDescription`.
+
+    :param text: the text to display.
+    """
     return ItemDescription(text, **kwargs)
 
 

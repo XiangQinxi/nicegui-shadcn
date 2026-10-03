@@ -148,7 +148,10 @@ class Button(ShadcnElement, default_classes=_BASE):
             self._props.pop('aria-label', None)
 
     def set_text(self, text: str) -> None:
-        """Set the label of the button."""
+        """Set the label of the button.
+
+        :param text: the new label.
+        """
         self._text_value = text
         if self._label is None:
             if not text:
@@ -160,7 +163,10 @@ class Button(ShadcnElement, default_classes=_BASE):
         self._style_label()
 
     def set_enabled(self, enabled: bool) -> None:
-        """Enable or disable the button."""
+        """Enable or disable the button.
+
+        :param enabled: whether the button can be clicked.
+        """
         if enabled:
             self._props.pop('disabled', None)
         else:
@@ -169,5 +175,8 @@ class Button(ShadcnElement, default_classes=_BASE):
 
 
 def button(text: str = '', **kwargs: Any) -> Button:
-    """Create a :class:`Button`. Shorthand for ``Button(text, **kwargs)``."""
+    """Create a :class:`Button`. Shorthand for ``Button(text, **kwargs)``.
+
+    :param text: label of the button.
+    """
     return Button(text, **kwargs)

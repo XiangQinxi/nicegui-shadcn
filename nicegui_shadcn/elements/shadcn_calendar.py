@@ -46,6 +46,7 @@ class Calendar(ShadcnElement, ValueElement, component='shadcn_calendar.vue'):
     :param aria_label: the accessible name of the calendar grid.
     :param on_change: callback invoked with the value-change event when another
         day is picked; read ``e.value`` for the new ISO date string.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
     """
 
     LOOPBACK = False
@@ -85,5 +86,9 @@ class Calendar(ShadcnElement, ValueElement, component='shadcn_calendar.vue'):
 
 
 def calendar(value: date | datetime | str | None = None, **kwargs: Any) -> Calendar:
-    """Create a :class:`Calendar`."""
+    """Create a :class:`Calendar`.
+
+    :param value: the selected day, as a :class:`datetime.date` or an ISO
+        ``YYYY-MM-DD`` string.
+    """
     return Calendar(value, **kwargs)

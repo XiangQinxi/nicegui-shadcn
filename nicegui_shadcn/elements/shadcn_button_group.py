@@ -37,6 +37,7 @@ class ButtonGroup(ShadcnElement, default_classes=_BUTTON_GROUP_HORIZONTAL_CLASSE
     """A row (or column) of buttons joined into one control.
 
     :param vertical: stack the buttons instead of placing them side by side.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
     """
 
     def __init__(self,
@@ -51,7 +52,11 @@ class ButtonGroup(ShadcnElement, default_classes=_BUTTON_GROUP_HORIZONTAL_CLASSE
 
 class ButtonGroupText(ShadcnElement, TextElement,
                       default_classes='flex items-center gap-2 rounded-md border bg-muted px-4 text-sm font-medium'):
-    """Static text (or an icon) that sits inside a :class:`ButtonGroup`."""
+    """Static text (or an icon) that sits inside a :class:`ButtonGroup`.
+
+    :param text: the text to display.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
+    """
 
     def __init__(self,
                  text: str = '',
@@ -67,7 +72,12 @@ _BUTTON_GROUP_SEPARATOR_VERTICAL_CLASSES = 'relative h-px w-full bg-input'
 
 
 class ButtonGroupSeparator(ShadcnElement, default_classes=_BUTTON_GROUP_SEPARATOR_HORIZONTAL_CLASSES):
-    """A hairline between two buttons of a :class:`ButtonGroup`."""
+    """A hairline between two buttons of a :class:`ButtonGroup`.
+
+    :param vertical: draw the separator as a horizontal hairline, for use in a
+        vertical group.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
+    """
 
     def __init__(self,
                  *,
@@ -85,7 +95,10 @@ def button_group(**kwargs: Any) -> ButtonGroup:
 
 
 def button_group_text(text: str = '', **kwargs: Any) -> ButtonGroupText:
-    """Create a :class:`ButtonGroupText`."""
+    """Create a :class:`ButtonGroupText`.
+
+    :param text: the text to display.
+    """
     return ButtonGroupText(text, **kwargs)
 
 

@@ -38,6 +38,7 @@ class ScrollArea(ShadcnElement, component='shadcn_scroll_area.vue'):
         overflows) or ``'always'``.
     :param scroll_hide_delay: milliseconds a scrollbar stays visible after the
         interaction ends, for the types that hide themselves.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
     """
 
     def __init__(self,
@@ -53,5 +54,9 @@ class ScrollArea(ShadcnElement, component='shadcn_scroll_area.vue'):
 
 
 def scroll_area(*, type_: str = 'hover', **kwargs: Any) -> ScrollArea:
-    """Create a :class:`ScrollArea`."""
+    """Create a :class:`ScrollArea`.
+
+    :param type_: when the scrollbars are visible: ``'hover'``, ``'scroll'``,
+        ``'auto'`` or ``'always'``.
+    """
     return ScrollArea(type_=type_, **kwargs)

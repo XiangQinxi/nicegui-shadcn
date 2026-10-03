@@ -33,6 +33,7 @@ class Dialog(_Openable, ShadcnElement, ValueElement, component='shadcn_dialog.vu
     :param on_change: callback invoked with the value-change event when the open state changes; read ``e.value`` for the new state.
         A click on the backdrop or on the close button also lands here, so a
         ``dialog.on('...')``-free way to react to dismissal is ``on_change``.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
     """
 
     def __init__(self,
@@ -50,7 +51,12 @@ class Dialog(_Openable, ShadcnElement, ValueElement, component='shadcn_dialog.vu
 
 class DialogTrigger(ShadcnElement, TextElement, component='shadcn_dialog_trigger.vue',
                     default_classes=_button_classes('outline')):
-    """The element that opens a :class:`Dialog` when clicked."""
+    """The element that opens a :class:`Dialog` when clicked.
+
+    :param text: the text to display.
+    :param as_child: render the child element instead of a wrapper.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
+    """
 
     def __init__(self,
                  text: str = '',
@@ -73,6 +79,7 @@ class DialogContent(ShadcnElement, component='shadcn_dialog_content.vue'):
     :param side: ``'center'`` (default) or one of ``'top'``, ``'right'``,
         ``'bottom'``, ``'left'`` for an edge sheet.
     :param closable: render the small close button in the top-right corner.
+    :param aria_label: fallback heading used when ``title`` is empty.
     :param classes: classes for the panel itself, which lives in a portal.
     """
 
@@ -96,7 +103,11 @@ class DialogContent(ShadcnElement, component='shadcn_dialog_content.vue'):
 
 
 class DialogFooter(ShadcnElement, default_classes='flex flex-col-reverse gap-2 sm:flex-row sm:justify-end'):
-    """The action row at the bottom of a :class:`DialogContent`."""
+    """The action row at the bottom of a :class:`DialogContent`.
+
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
+    :param variant_classes: classes implied by the variant, set by the component itself.
+    """
 
 
 class Tooltip(ShadcnElement, component='shadcn_tooltip.vue'):
@@ -105,6 +116,7 @@ class Tooltip(ShadcnElement, component='shadcn_tooltip.vue'):
     :param text: the hint shown in the bubble.
     :param side: ``'top'``, ``'right'``, ``'bottom'`` or ``'left'``.
     :param delay: milliseconds to wait before showing the hint.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
     """
 
     def __init__(self,
@@ -126,6 +138,7 @@ class Popover(_Openable, ShadcnElement, ValueElement, component='shadcn_popover.
 
     :param value: whether the popover starts out open.
     :param on_change: callback invoked with the value-change event when the open state changes; read ``e.value`` for the new state.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
     """
 
     def __init__(self,
@@ -143,7 +156,12 @@ class Popover(_Openable, ShadcnElement, ValueElement, component='shadcn_popover.
 
 class PopoverTrigger(ShadcnElement, TextElement, component='shadcn_popover_trigger.vue',
                      default_classes=_button_classes('outline')):
-    """The element that opens a :class:`Popover` when clicked."""
+    """The element that opens a :class:`Popover` when clicked.
+
+    :param text: the text to display.
+    :param as_child: render the child element instead of a wrapper.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
+    """
 
     def __init__(self,
                  text: str = '',
@@ -163,6 +181,7 @@ class PopoverContent(ShadcnElement, component='shadcn_popover_content.vue'):
     :param side: preferred placement relative to the trigger.
     :param align: ``'start'``, ``'center'`` or ``'end'``.
     :param side_offset: gap in pixels between trigger and panel.
+    :param classes: classes for the panel itself, which lives in a portal.
     """
 
     def __init__(self,
@@ -196,7 +215,9 @@ class DropdownMenu(ShadcnElement, component='shadcn_dropdown_menu.vue'):
         ``kind='label'``/``kind='separator'`` for non-interactive entries and
         ``variant='destructive'`` to tint an item red.
     :param align: ``'start'``, ``'center'`` or ``'end'``.
+    :param side_offset: gap in pixels between trigger and panel.
     :param on_select: callback invoked with the event when an item is chosen.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
     """
 
     def __init__(self,
@@ -216,23 +237,36 @@ class DropdownMenu(ShadcnElement, component='shadcn_dropdown_menu.vue'):
             self.on('select', on_select)
 
     def set_items(self, items: Mapping[str, Any] | Iterable[Any]) -> None:
-        """Replace the menu entries."""
+        """Replace the menu entries.
+
+        :param items: the new entries, in any shape
+            :func:`nicegui_shadcn.elements.base.normalize_options` accepts.
+        """
         self._props['items'] = normalize_options(items)
         self.update()
 
 
 def dialog(value: bool = False, **kwargs: Any) -> Dialog:
-    """Create a :class:`Dialog`."""
+    """Create a :class:`Dialog`.
+
+    :param value: whether the dialog starts out open.
+    """
     return Dialog(value, **kwargs)
 
 
 def dialog_trigger(text: str = '', **kwargs: Any) -> DialogTrigger:
-    """Create a :class:`DialogTrigger`."""
+    """Create a :class:`DialogTrigger`.
+
+    :param text: the text to display.
+    """
     return DialogTrigger(text, **kwargs)
 
 
 def dialog_content(title: str | None = None, **kwargs: Any) -> DialogContent:
-    """Create a :class:`DialogContent`."""
+    """Create a :class:`DialogContent`.
+
+    :param title: heading text, rendered for screen readers only when omitted.
+    """
     return DialogContent(title, **kwargs)
 
 
@@ -242,17 +276,26 @@ def dialog_footer(**kwargs: Any) -> DialogFooter:
 
 
 def tooltip(text: str, **kwargs: Any) -> Tooltip:
-    """Create a :class:`Tooltip`."""
+    """Create a :class:`Tooltip`.
+
+    :param text: the hint shown in the bubble.
+    """
     return Tooltip(text, **kwargs)
 
 
 def popover(value: bool = False, **kwargs: Any) -> Popover:
-    """Create a :class:`Popover`."""
+    """Create a :class:`Popover`.
+
+    :param value: whether the popover starts out open.
+    """
     return Popover(value, **kwargs)
 
 
 def popover_trigger(text: str = '', **kwargs: Any) -> PopoverTrigger:
-    """Create a :class:`PopoverTrigger`."""
+    """Create a :class:`PopoverTrigger`.
+
+    :param text: the text to display.
+    """
     return PopoverTrigger(text, **kwargs)
 
 
@@ -262,5 +305,9 @@ def popover_content(**kwargs: Any) -> PopoverContent:
 
 
 def dropdown_menu(items: Mapping[str, Any] | Iterable[Any] | None = None, **kwargs: Any) -> DropdownMenu:
-    """Create a :class:`DropdownMenu`."""
+    """Create a :class:`DropdownMenu`.
+
+    :param items: the entries, in any shape
+        :func:`nicegui_shadcn.elements.base.normalize_options` accepts.
+    """
     return DropdownMenu(items, **kwargs)

@@ -27,6 +27,9 @@ class ContextMenu(ShadcnElement, component='shadcn_context_menu.vue'):
     This element only carries the shared menu state; the visible parts are the
     :class:`ContextMenuTrigger` and the :class:`ContextMenuContent` nested
     inside it.
+
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
+    :param variant_classes: classes implied by the variant, set by the component itself.
     """
 
 
@@ -39,6 +42,7 @@ class ContextMenuTrigger(ShadcnElement, TextElement, component='shadcn_context_m
         area needs more than text.
     :param as_child: forward the trigger's attributes to the nested element
         rather than rendering a wrapper around it.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
     """
 
     def __init__(self,
@@ -61,6 +65,7 @@ class ContextMenuContent(ShadcnElement, component='shadcn_context_menu_content.v
         ``kind='label'``/``kind='separator'`` for non-interactive entries and
         ``variant='destructive'`` to tint an item red.
     :param on_select: callback invoked with the event when an item is chosen.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
     """
 
     def __init__(self,
@@ -76,7 +81,11 @@ class ContextMenuContent(ShadcnElement, component='shadcn_context_menu_content.v
             self.on('select', on_select)
 
     def set_items(self, items: Mapping[str, Any] | Iterable[Any]) -> None:
-        """Replace the menu entries."""
+        """Replace the menu entries.
+
+        :param items: the new entries, in any shape
+            :func:`nicegui_shadcn.elements.base.normalize_options` accepts.
+        """
         self._props['items'] = normalize_options(items)
         self.update()
 
@@ -87,10 +96,19 @@ def context_menu(**kwargs: Any) -> ContextMenu:
 
 
 def context_menu_trigger(text: str = '', **kwargs: Any) -> ContextMenuTrigger:
-    """Create a :class:`ContextMenuTrigger`."""
+    """Create a :class:`ContextMenuTrigger`.
+
+    :param text: label rendered inside the area.
+    """
     return ContextMenuTrigger(text, **kwargs)
 
 
 def context_menu_content(items: Mapping[str, Any] | Iterable[Any] | None = None, **kwargs: Any) -> ContextMenuContent:
-    """Create a :class:`ContextMenuContent`."""
+    """Create a :class:`ContextMenuContent`.
+
+    :param items: the entries, in any shape
+        :func:`nicegui_shadcn.elements.base.normalize_options` accepts. Use
+        ``kind='label'``/``kind='separator'`` for non-interactive entries and
+        ``variant='destructive'`` to tint an item red.
+    """
     return ContextMenuContent(items, **kwargs)

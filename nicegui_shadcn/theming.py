@@ -196,6 +196,9 @@ def use_base_color(name: str) -> None:
 def set_colors(**tokens: str) -> None:
     """Override individual light-mode tokens.
 
+    :param tokens: the tokens to override, given as keyword arguments named after
+        :data:`COLOR_TOKENS` with underscores instead of hyphens.
+
     Keyword names are the tokens of :data:`COLOR_TOKENS` with underscores
     instead of hyphens: ``set_colors(primary='#2563eb', card_foreground='#111')``.
     Dark mode keeps its own values, so a colour that should follow usually needs
@@ -206,7 +209,10 @@ def set_colors(**tokens: str) -> None:
 
 
 def set_dark_colors(**tokens: str) -> None:
-    """Override individual dark-mode tokens, the counterpart of :func:`set_colors`."""
+    """Override individual dark-mode tokens, the counterpart of :func:`set_colors`.
+
+    :param tokens: the tokens to override, named like those of :func:`set_colors`.
+    """
     _dark.update(_clean(tokens, 'set_dark_colors'))
     _apply()
 
@@ -246,7 +252,11 @@ def set_variables(**variables: str) -> None:
 
 
 def set_dark_variables(**variables: str) -> None:
-    """Override custom properties in dark mode, like :func:`set_variables`."""
+    """Override custom properties in dark mode, like :func:`set_variables`.
+
+    :param variables: the custom properties to set, named like those of
+        :func:`set_variables`.
+    """
     cleaned = _clean_variables(variables, 'set_dark_variables')
     _warn_about_unread(cleaned)
     _dark_variables.update(cleaned)

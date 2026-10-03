@@ -4,11 +4,11 @@ This is a Python composition of :class:`~nicegui_shadcn.elements.shadcn_overlay.
 and :class:`~nicegui_shadcn.elements.shadcn_calendar.Calendar` -- exactly how upstream
 shadcn/ui ships its date picker -- so there is only ever one calendar implementation.
 
-```python
-picker = shadcn.date_picker(value=date(2026, 3, 15),
-                            on_date_change=lambda e: ui.notify(e.date))
-ui.label().bind_text_from(picker, 'date')
-```
+.. code-block:: python
+
+   picker = shadcn.date_picker(value=date(2026, 3, 15),
+                               on_date_change=lambda e: ui.notify(e.date))
+   ui.label().bind_text_from(picker, 'date')
 """
 
 from __future__ import annotations
@@ -42,9 +42,13 @@ class DatePicker(Popover):
     :param placeholder: label of the button while no day is selected.
     :param week_starts_on: ``0`` for Monday through ``6`` for Sunday.
     :param locale: the BCP 47 locale used for month and weekday names.
+    :param aria_label: the accessible name of the calendar grid.
     :param disabled: whether the whole picker is read-only.
+    :param format_date: a callable turning the selected ISO date string into the
+        label of the button; defaults to a ``March 15, 2026`` style date.
     :param on_date_change: callback invoked with the value-change event whenever a
         day is picked; read ``e.value`` for the new ISO date string.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
     """
 
     def __init__(self,
@@ -91,7 +95,12 @@ class DatePicker(Popover):
             handler(event)
 
     def on_date_change(self, callback: Callable[..., Any] | None) -> None:
-        """Register a callback invoked when a day is picked."""
+        """Register a callback invoked when a day is picked.
+
+        :param callback: called with the value-change event whenever a day is
+            picked; read ``e.value`` for the new ISO date string. ``None``
+            leaves the registered handlers untouched.
+        """
         if callback is not None:
             self._date_change_handlers.append(callback)
 
@@ -117,5 +126,9 @@ class DatePicker(Popover):
 
 
 def date_picker(value: date | datetime | str | None = None, **kwargs: Any) -> DatePicker:
-    """Create a :class:`DatePicker`."""
+    """Create a :class:`DatePicker`.
+
+    :param value: the selected day, as a :class:`datetime.date` or an ISO
+        ``YYYY-MM-DD`` string.
+    """
     return DatePicker(value, **kwargs)

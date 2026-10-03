@@ -98,6 +98,7 @@ class Spinner(ShadcnElement, Html, default_classes=_SPINNER_CLASSES):
 
     :param size: width and height of the SVG in pixels.
     :param label: accessible name announced to screen readers.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
     """
 
     def __init__(self,
@@ -116,6 +117,9 @@ class Kbd(ShadcnElement, TextElement, default_classes=_KBD_CLASSES):
 
     Renders a real ``<kbd>`` element, which is what tells a screen reader that a
     letter stands for a key rather than for text.
+
+    :param text: the text to display.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
     """
 
     def __init__(self,
@@ -136,6 +140,7 @@ class Marker(ShadcnElement, default_classes=_MARKER_CLASSES):
         ``'info'`` -- it colours the dot.
     :param icon: draw this glyph instead of a dot, e.g. ``'circle-check'``.
     :param pulse: pulse the dot to signal an in-progress state.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
     """
 
     def __init__(self,
@@ -173,11 +178,20 @@ class Empty(ShadcnElement, default_classes=_EMPTY_CLASSES):
                 shadcn.empty_description('Try a different search term.')
                 with shadcn.empty_content():
                     shadcn.button('Clear filters', variant='outline')
+
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
+    :param variant_classes: classes implied by the variant; this container has no
+        variants of its own, so the parameter is accepted for consistency only.
     """
 
 
 class EmptyHeader(ShadcnElement, default_classes=_EMPTY_HEADER_CLASSES):
-    """The centred stack inside an :class:`Empty`."""
+    """The centred stack inside an :class:`Empty`.
+
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
+    :param variant_classes: classes implied by the variant; this container has no
+        variants of its own, so the parameter is accepted for consistency only.
+    """
 
 
 class EmptyMedia(ShadcnElement, default_classes=_EMPTY_MEDIA_CLASSES):
@@ -185,6 +199,7 @@ class EmptyMedia(ShadcnElement, default_classes=_EMPTY_MEDIA_CLASSES):
 
     :param variant: ``'default'`` leaves the box transparent, ``'icon'`` puts the
         content on a muted rounded square.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
     """
 
     def __init__(self,
@@ -201,7 +216,11 @@ class EmptyMedia(ShadcnElement, default_classes=_EMPTY_MEDIA_CLASSES):
 
 
 class EmptyTitle(ShadcnElement, TextElement, default_classes=_EMPTY_TITLE_CLASSES):
-    """The headline of an :class:`Empty`."""
+    """The headline of an :class:`Empty`.
+
+    :param text: the text to display.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
+    """
 
     def __init__(self,
                  text: str = '',
@@ -213,7 +232,11 @@ class EmptyTitle(ShadcnElement, TextElement, default_classes=_EMPTY_TITLE_CLASSE
 
 
 class EmptyDescription(ShadcnElement, TextElement, default_classes=_EMPTY_DESCRIPTION_CLASSES):
-    """The explanatory line under an :class:`EmptyTitle`."""
+    """The explanatory line under an :class:`EmptyTitle`.
+
+    :param text: the text to display.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
+    """
 
     def __init__(self,
                  text: str = '',
@@ -225,13 +248,19 @@ class EmptyDescription(ShadcnElement, TextElement, default_classes=_EMPTY_DESCRI
 
 
 class EmptyContent(ShadcnElement, default_classes=_EMPTY_CONTENT_CLASSES):
-    """The call-to-action area at the bottom of an :class:`Empty`."""
+    """The call-to-action area at the bottom of an :class:`Empty`.
+
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
+    :param variant_classes: classes implied by the variant; this container has no
+        variants of its own, so the parameter is accepted for consistency only.
+    """
 
 
 class AspectRatio(ShadcnElement, component='shadcn_aspect_ratio.vue'):
     """A box that keeps a fixed width-to-height ratio.
 
     :param ratio: width divided by height, e.g. ``16 / 9``.
+    :param classes: extra utility classes, merged with ``cn()`` semantics.
     """
 
     def __init__(self,
@@ -248,17 +277,27 @@ class AspectRatio(ShadcnElement, component='shadcn_aspect_ratio.vue'):
 
 
 def spinner(*, size: int | float = 16, label: str = 'Loading', **kwargs: Any) -> Spinner:
-    """Create a :class:`Spinner`."""
+    """Create a :class:`Spinner`.
+
+    :param size: width and height of the SVG in pixels.
+    :param label: accessible name announced to screen readers.
+    """
     return Spinner(size=size, label=label, **kwargs)
 
 
 def kbd(text: str = '', **kwargs: Any) -> Kbd:
-    """Create a :class:`Kbd`."""
+    """Create a :class:`Kbd`.
+
+    :param text: the text to display.
+    """
     return Kbd(text, **kwargs)
 
 
 def marker(text: str = '', **kwargs: Any) -> Marker:
-    """Create a :class:`Marker`."""
+    """Create a :class:`Marker`.
+
+    :param text: the text to display.
+    """
     return Marker(text, **kwargs)
 
 
@@ -273,17 +312,27 @@ def empty_header(**kwargs: Any) -> EmptyHeader:
 
 
 def empty_media(*, variant: str = 'default', **kwargs: Any) -> EmptyMedia:
-    """Create an :class:`EmptyMedia`."""
+    """Create an :class:`EmptyMedia`.
+
+    :param variant: ``'default'`` or ``'icon'``; ``'icon'`` puts the content on a
+        muted rounded square.
+    """
     return EmptyMedia(variant=variant, **kwargs)
 
 
 def empty_title(text: str = '', **kwargs: Any) -> EmptyTitle:
-    """Create an :class:`EmptyTitle`."""
+    """Create an :class:`EmptyTitle`.
+
+    :param text: the text to display.
+    """
     return EmptyTitle(text, **kwargs)
 
 
 def empty_description(text: str = '', **kwargs: Any) -> EmptyDescription:
-    """Create an :class:`EmptyDescription`."""
+    """Create an :class:`EmptyDescription`.
+
+    :param text: the text to display.
+    """
     return EmptyDescription(text, **kwargs)
 
 
@@ -293,5 +342,8 @@ def empty_content(**kwargs: Any) -> EmptyContent:
 
 
 def aspect_ratio(ratio: int | float = 1, **kwargs: Any) -> AspectRatio:
-    """Create an :class:`AspectRatio`."""
+    """Create an :class:`AspectRatio`.
+
+    :param ratio: width divided by height, e.g. ``16 / 9``.
+    """
     return AspectRatio(ratio, **kwargs)
