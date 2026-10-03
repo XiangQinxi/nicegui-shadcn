@@ -16,6 +16,21 @@ from pathlib import Path
 # clone then works without installing the package first.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+# autodoc imports the package to read its docstrings, so the build machine needs
+# the package *and* its runtime dependencies — ``nicegui`` above all.  A build
+# that lacks them does not look broken: autodoc swallows the ImportError once per
+# directive, Sphinx still exits 0, and every page under ``docs/api/`` quietly
+# loses its signatures and parameters.  Fail loudly instead, and name the fix.
+try:
+    import nicegui_shadcn  # noqa: F401
+except ImportError as exc:  # pragma: no cover - only on a misconfigured build
+    raise RuntimeError(
+        f"cannot import nicegui_shadcn ({exc}), so the API reference would come "
+        "out empty. Install the package and its runtime dependencies first:\n"
+        "    pip install -r docs/requirements.txt   # Sphinx, MyST, the theme\n"
+        "    pip install -e .                       # nicegui-shadcn + nicegui"
+    ) from exc
+
 # -- Project information -----------------------------------------------------
 
 project = "nicegui-shadcn"
