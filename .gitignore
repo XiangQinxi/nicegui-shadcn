@@ -32,3 +32,6 @@ _probe*
 
 # scratch demos, not part of the distribution
 demos/
+
+# personal maintenance notes (upstream wiki PR log), not part of the distribution
+docs/contrib/

@@ -61,7 +61,7 @@ python tests/audit_classes.py     # 395 tokens: every class used in Python exist
 python tests/check_examples.py    # every Markdown sample binds to a real signature
 python tests/check_docstrings.py  # every public parameter is documented the way autodoc reads
 python tests/check_readme.py      # README.md and README_zh.md: blocks identical, anchors live
-python tests/test_theming.py      # 107 checks: base-colour registry, radius ladder, injection
+python tests/test_theming.py      # 109 checks: base-colour registry, radius ladder, injection
 python tests/check_dist.py        # wheel/sdist contents (skips until `poetry build` has run)
 python examples/demo.py           # start the demo (port 8080), then:
 node tests/visual_check.mjs http://127.0.0.1:8080/   # 34 checks in headless Edge
@@ -480,7 +480,7 @@ looked at the result.
 6. **`Button` has no `.vue`.** It renders a native `<button>` (`tag='button'`). Asserting
    `tpl-shadcn_button` is wrong; `test_render.py` derives one `<stem> registered` check per
    `*.vue` file, so its check count tracks the number of templates (61 at the time of
-   writing: 6 static + the per-template checks).
+   writing: 7 static + the per-template checks).
 7. **NiceGUI 3.x removed `classes=` / `style=` / `props=` from `Element.__init__`.** Set them
    through `_props` / `.classes()` / `.style()` after construction, as `base.py` does.
 8. **`add_slot('default', template)` cannot inject markup.** `_collect_slot_dict()` excludes

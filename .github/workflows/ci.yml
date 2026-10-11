@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install nicegui poetry
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      # The stylesheet and the vendor bundle are committed build artifacts, so
+      # the most important CI invariant is: rebuilding them from the sources in
+      # this commit changes nothing.
+      - name: Rebuild runtime assets and require them unchanged
+        run: |
+          npm run build
+          git diff --exit-code -- nicegui_shadcn/static
+
+      - name: Fast test suite
+        run: |
+          python tests/test_tw_merge.py
+          python tests/test_render.py
+          python tests/audit_classes.py
+          python tests/check_examples.py
+          python tests/check_docstrings.py
+          python tests/check_readme.py
+          python tests/test_theming.py
+
+      # check_dist.py SKIPs unless dist/ holds artifacts of the current version.
+      - name: Build the distribution and check its contents
+        run: |
+          poetry build
+          python tests/check_dist.py
+
+      # Drives a locally installed Chromium; ubuntu-latest runners ship
+      # google-chrome, which tests/visual_check.mjs auto-detects.
+      - name: Visual check against the demo
+        run: |
+          python examples/demo.py &
+          for i in $(seq 1 60); do
+            if curl -sf http://127.0.0.1:8080/ > /dev/null; then break; fi
+            sleep 1
+          done
+          node tests/visual_check.mjs
