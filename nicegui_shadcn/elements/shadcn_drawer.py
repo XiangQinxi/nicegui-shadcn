@@ -22,7 +22,23 @@ __all__ = [
     'drawer', 'drawer_content', 'drawer_footer', 'drawer_trigger',
 ]
 
-_DRAWER_SIDES = {name: name for name in ('bottom', 'top', 'right', 'left')}
+#: The geometry of the panel per edge; kept next to the drawer's own ``side`` so
+#: the two stay visibly in sync.
+_DRAWER_PANEL_VARIANTS = {
+    'bottom': 'inset-x-0 bottom-0 max-h-[80vh] rounded-t-xl border-t',
+    'top': 'inset-x-0 top-0 max-h-[80vh] rounded-b-xl border-b',
+    'right': 'inset-y-0 right-0 h-full w-3/4 border-l sm:max-w-sm',
+    'left': 'inset-y-0 left-0 h-full w-3/4 border-r sm:max-w-sm',
+}
+
+#: What every drawer panel shares, whatever edge it comes from.
+_DRAWER_PANEL_CLASSES = (
+    'fixed z-50 flex flex-col gap-4 bg-background shadow-lg transition ease-in-out '
+    'data-[state=closed]:animate-out data-[state=closed]:duration-300 '
+    'data-[state=open]:animate-in data-[state=open]:duration-500'
+)
+
+_DRAWER_SIDES = {name: name for name in _DRAWER_PANEL_VARIANTS}
 
 
 class Drawer(_Openable, ShadcnElement, ValueElement, component='shadcn_drawer.vue'):
@@ -89,7 +105,8 @@ class DrawerTrigger(ShadcnElement, TextElement, component='shadcn_drawer_trigger
             self.on('click', on_click)
 
 
-class DrawerContent(ShadcnElement, component='shadcn_drawer_content.vue'):
+class DrawerContent(ShadcnElement, component='shadcn_drawer_content.vue',
+                    default_classes=_DRAWER_PANEL_CLASSES):
     """The panel of a :class:`Drawer`.
 
     :param title: heading text. When omitted the drawer stays accessible but
@@ -99,7 +116,8 @@ class DrawerContent(ShadcnElement, component='shadcn_drawer_content.vue'):
         :class:`Drawer` it belongs to.
     :param closable: render the small close button in the panel corner.
     :param aria_label: fallback heading used when ``title`` is empty.
-    :param classes: classes for the panel itself, which lives in a portal.
+    :param classes: classes for the panel itself, which lives in a portal, merged
+        with ``cn()`` semantics.
     """
 
     def __init__(self,
@@ -112,11 +130,12 @@ class DrawerContent(ShadcnElement, component='shadcn_drawer_content.vue'):
                  classes: str | Iterable[str] | None = None,
                  **kwargs: Any,
                  ) -> None:
-        super().__init__(classes=classes, **kwargs)
+        side = option('drawer side', side, _DRAWER_SIDES)
+        super().__init__(classes=classes, variant_classes=_DRAWER_PANEL_VARIANTS[side], **kwargs)
         self._props['title'] = title
         self._props['description'] = description
         self._props['ariaLabel'] = aria_label
-        self._props['side'] = option('drawer side', side, _DRAWER_SIDES)
+        self._props['side'] = side
         if not closable:
             self._props['closable'] = False
 

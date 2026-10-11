@@ -20,7 +20,7 @@ from typing import Any
 from nicegui.elements.mixins.text_element import TextElement
 from nicegui.elements.mixins.value_element import ValueElement
 
-from .base import ShadcnElement
+from .base import ShadcnElement, _ORIENTATIONS, option
 
 __all__ = [
     'Accordion', 'AccordionContent', 'AccordionItem', 'AccordionTrigger',
@@ -29,9 +29,18 @@ __all__ = [
 
 _ACCORDION_ITEM_CLASSES = 'border-b last:border-b-0'
 
-# The trigger's own classes live in the template: the component's root has to be
-# reka-ui's `AccordionHeader` (an <h3>, needed for the ARIA structure), and the
-# caller's classes are forwarded to the inner <button> with `v-bind="$attrs"`.
+# The trigger's own classes live here rather than in the template: the component
+# forwards the caller's ``classes`` to the inner ``<button>`` with ``v-bind="$attrs"``
+# (the root has to stay reka-ui's `AccordionHeader`, an <h3>, for the ARIA structure),
+# and a literal class list in the template would be merged by Vue *after* ``tw_merge``
+# ran, so it could never be displaced.
+_ACCORDION_TRIGGER_CLASSES = (
+    'flex flex-1 items-start justify-between gap-4 rounded-md py-4 text-left text-sm '
+    'font-medium outline-none transition-all hover:underline focus-visible:border-ring '
+    'focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none '
+    'disabled:opacity-50 [&[data-state=open]>svg]:rotate-180'
+)
+
 # The content is kept mounted (`force-mount`) so that the child elements always
 # exist on the client and server-side updates can always reach them; `hidden`
 # then does the hiding, because reka only sets `data-state` on a mounted panel.
@@ -72,7 +81,7 @@ class Accordion(ShadcnElement, ValueElement, component='shadcn_accordion.vue', d
         super().__init__(value=value, on_value_change=on_change, classes=classes, **kwargs)
         self._props['type'] = 'multiple' if multiple else 'single'
         self._props['collapsible'] = bool(collapsible) and not multiple
-        self._props['orientation'] = orientation
+        self._props['orientation'] = option('accordion orientation', orientation, _ORIENTATIONS)
 
     def _value_to_model_value(self, value: Any) -> Any:
         return _as_model_value(value)
@@ -100,14 +109,16 @@ class AccordionItem(ShadcnElement, component='shadcn_accordion_item.vue', defaul
             self._props['disabled'] = True
 
 
-class AccordionTrigger(ShadcnElement, TextElement, component='shadcn_accordion_trigger.vue'):
+class AccordionTrigger(ShadcnElement, TextElement, component='shadcn_accordion_trigger.vue',
+                       default_classes=_ACCORDION_TRIGGER_CLASSES):
     """The clickable header of an :class:`AccordionItem`.
 
     Classes given here end up on the ``<button>``, not on the surrounding
     ``<h3>``, because the template forwards ``$attrs`` to the button.
 
     :param text: the text to display.
-    :param classes: extra utility classes, merged with ``cn()`` semantics.
+    :param classes: extra utility classes for the ``<button>``, merged with ``cn()``
+        semantics.
     """
 
     def __init__(self,

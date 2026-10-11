@@ -9,7 +9,6 @@
           v-bind="$attrs"
           :side="side"
           :side-offset="6"
-          class="z-50 w-fit rounded-md bg-primary px-3 py-1.5 text-xs text-balance text-primary-foreground data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=delayed-open]:animate-in data-[state=delayed-open]:fade-in-0 data-[state=delayed-open]:zoom-in-95"
         >
           {{ text }}
         </TooltipContent>

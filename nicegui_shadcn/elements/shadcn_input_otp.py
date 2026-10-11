@@ -29,8 +29,14 @@ REGEXP_ONLY_CHARS = r'^[a-zA-Z]+$'
 #: Accept ASCII letters and digits.
 REGEXP_ONLY_DIGITS_AND_CHARS = r'^[a-zA-Z0-9]+$'
 
+# The wrapper's classes live here rather than in the template so that ``tw_merge`` can
+# resolve them against a caller's ``classes='w-full'``; a literal class in the template
+# is merged by Vue after the merge ran and would therefore always win.
+_INPUT_OTP_CLASSES = 'relative flex items-center gap-2 has-disabled:opacity-50'
 
-class InputOTP(ShadcnElement, ValueElement, component='shadcn_input_otp.vue'):
+
+class InputOTP(ShadcnElement, ValueElement, component='shadcn_input_otp.vue',
+               default_classes=_INPUT_OTP_CLASSES):
     """A one-time-password field rendered as a row of character slots.
 
     :param value: the initial code.

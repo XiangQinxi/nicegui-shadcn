@@ -2,9 +2,11 @@
 
 All four share the same shape: a persistent *root* element that holds the open
 state, an optional *trigger*, and a *content* element whose markup ends up in a
-portal appended to ``<body>`` -- which is why the visible parts style themselves
-from the component templates while the caller's ``classes`` are forwarded to the
-panel through ``$attrs``.
+portal appended to ``<body>``. The caller's ``classes`` are forwarded to that
+panel through ``$attrs``, so the panel's own classes are declared in this module
+rather than in the templates: ``tw_merge`` can only resolve a caller's class
+against a default it can see, and a literal in the template would be applied by
+Vue *after* the merge ran and would therefore always win.
 """
 
 from __future__ import annotations
@@ -15,7 +17,7 @@ from typing import Any
 from nicegui.elements.mixins.text_element import TextElement
 from nicegui.elements.mixins.value_element import ValueElement
 
-from .base import ShadcnElement, _Openable, normalize_options
+from .base import ShadcnElement, _ALIGNMENTS, _SIDES, _Openable, normalize_options, option
 from .shadcn_button import button_classes as _button_classes
 
 __all__ = [
@@ -24,6 +26,45 @@ __all__ = [
     'dialog', 'dialog_content', 'dialog_footer', 'dialog_trigger',
     'dropdown_menu', 'popover', 'popover_content', 'popover_trigger', 'tooltip',
 ]
+
+#: The tooltip bubble; the caller's ``classes`` reach it through ``$attrs``.
+_TOOLTIP_CLASSES = (
+    'z-50 w-fit rounded-md bg-primary px-3 py-1.5 text-xs text-balance text-primary-foreground '
+    'data-[state=closed]:animate-out data-[state=closed]:fade-out-0 '
+    'data-[state=delayed-open]:animate-in data-[state=delayed-open]:fade-in-0 '
+    'data-[state=delayed-open]:zoom-in-95'
+)
+
+#: The popover panel; the caller's ``classes`` reach it through ``$attrs``.
+_POPOVER_CLASSES = (
+    'z-50 w-72 rounded-md border bg-popover p-4 text-popover-foreground shadow-md outline-none '
+    'data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in '
+    'data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95'
+)
+
+
+#: The parts shared by every dialog panel; the caller's ``classes`` reach it
+#: through ``$attrs`` while the geometry below arrives as ``variant_classes``.
+_DIALOG_PANEL_CLASSES = (
+    'fixed z-50 flex flex-col gap-4 border bg-background shadow-lg '
+    'data-[state=closed]:animate-out data-[state=closed]:fade-out-0 '
+    'data-[state=open]:animate-in data-[state=open]:fade-in-0'
+)
+
+_DIALOG_PANEL_VARIANTS = {
+    'center': 'top-1/2 left-1/2 w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 '
+              'rounded-xl p-6 sm:max-w-lg',
+    'right': 'inset-y-0 right-0 h-full w-3/4 p-6 sm:max-w-sm '
+             'sm:data-[state=closed]:slide-out-to-right sm:data-[state=open]:slide-in-from-right',
+    'left': 'inset-y-0 left-0 h-full w-3/4 p-6 sm:max-w-sm '
+            'sm:data-[state=closed]:slide-out-to-left sm:data-[state=open]:slide-in-from-left',
+    'top': 'inset-x-0 top-0 h-auto p-6 data-[state=closed]:slide-out-to-top '
+           'data-[state=open]:slide-in-from-top',
+    'bottom': 'inset-x-0 bottom-0 h-auto p-6 data-[state=closed]:slide-out-to-bottom '
+              'data-[state=open]:slide-in-from-bottom',
+}
+
+_DIALOG_SIDES = {name: name for name in _DIALOG_PANEL_VARIANTS}
 
 
 class Dialog(_Openable, ShadcnElement, ValueElement, component='shadcn_dialog.vue'):
@@ -70,7 +111,8 @@ class DialogTrigger(ShadcnElement, TextElement, component='shadcn_dialog_trigger
             self._props['asChild'] = True
 
 
-class DialogContent(ShadcnElement, component='shadcn_dialog_content.vue'):
+class DialogContent(ShadcnElement, component='shadcn_dialog_content.vue',
+                    default_classes=_DIALOG_PANEL_CLASSES):
     """The panel of a :class:`Dialog`.
 
     :param title: heading text. When omitted the dialog stays accessible but
@@ -80,7 +122,11 @@ class DialogContent(ShadcnElement, component='shadcn_dialog_content.vue'):
         ``'bottom'``, ``'left'`` for an edge sheet.
     :param closable: render the small close button in the top-right corner.
     :param aria_label: fallback heading used when ``title`` is empty.
-    :param classes: classes for the panel itself, which lives in a portal.
+    :param classes: classes for the panel itself, which lives in a portal, merged
+        with ``cn()`` semantics -- so ``classes='p-8'`` wins over the panel's own
+        ``p-6``. Utilities that do not collide are kept, so a ``sm:``-prefixed
+        class such as the panel's ``sm:max-w-lg`` is unaffected by
+        ``classes='max-w-2xl'``.
     """
 
     def __init__(self,
@@ -93,7 +139,8 @@ class DialogContent(ShadcnElement, component='shadcn_dialog_content.vue'):
                  classes: str | Iterable[str] | None = None,
                  **kwargs: Any,
                  ) -> None:
-        super().__init__(classes=classes, **kwargs)
+        side = option('dialog side', side, _DIALOG_SIDES)
+        super().__init__(classes=classes, variant_classes=_DIALOG_PANEL_VARIANTS[side], **kwargs)
         self._props['title'] = title
         self._props['description'] = description
         self._props['ariaLabel'] = aria_label
@@ -110,13 +157,14 @@ class DialogFooter(ShadcnElement, default_classes='flex flex-col-reverse gap-2 s
     """
 
 
-class Tooltip(ShadcnElement, component='shadcn_tooltip.vue'):
+class Tooltip(ShadcnElement, component='shadcn_tooltip.vue', default_classes=_TOOLTIP_CLASSES):
     """A hover/focus hint attached to whatever elements are nested inside.
 
     :param text: the hint shown in the bubble.
     :param side: ``'top'``, ``'right'``, ``'bottom'`` or ``'left'``.
     :param delay: milliseconds to wait before showing the hint.
-    :param classes: extra utility classes, merged with ``cn()`` semantics.
+    :param classes: extra utility classes for the bubble, merged with ``cn()``
+        semantics.
     """
 
     def __init__(self,
@@ -129,7 +177,7 @@ class Tooltip(ShadcnElement, component='shadcn_tooltip.vue'):
                  ) -> None:
         super().__init__(classes=classes, **kwargs)
         self._props['text'] = text
-        self._props['side'] = side
+        self._props['side'] = option('tooltip side', side, _SIDES)
         self._props['delay'] = delay
 
 
@@ -175,7 +223,7 @@ class PopoverTrigger(ShadcnElement, TextElement, component='shadcn_popover_trigg
             self._props['asChild'] = True
 
 
-class PopoverContent(ShadcnElement, component='shadcn_popover_content.vue'):
+class PopoverContent(ShadcnElement, component='shadcn_popover_content.vue', default_classes=_POPOVER_CLASSES):
     """The floating panel of a :class:`Popover`.
 
     :param side: preferred placement relative to the trigger.
@@ -193,8 +241,8 @@ class PopoverContent(ShadcnElement, component='shadcn_popover_content.vue'):
                  **kwargs: Any,
                  ) -> None:
         super().__init__(classes=classes, **kwargs)
-        self._props['side'] = side
-        self._props['align'] = align
+        self._props['side'] = option('popover side', side, _SIDES)
+        self._props['align'] = option('popover align', align, _ALIGNMENTS)
         self._props['sideOffset'] = side_offset
 
 

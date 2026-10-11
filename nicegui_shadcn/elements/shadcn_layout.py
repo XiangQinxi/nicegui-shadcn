@@ -84,7 +84,9 @@ class CardFooter(ShadcnElement, default_classes='flex items-center px-6'):
         super().__init__(tag='div', classes=classes, **kwargs)
 
 
-_ORIENTATIONS = {
+# A *class* table, unlike the orientation vocabulary in ``base``: a separator has
+# no orientation prop, its axis is expressed by these two class lists.
+_SEPARATOR_ORIENTATION_CLASSES = {
     'horizontal': 'h-px w-full',
     'vertical': 'h-full w-px',
 }
@@ -111,7 +113,7 @@ class Separator(ShadcnElement, default_classes='shrink-0 bg-border'):
         super().__init__(
             tag='div',
             classes=classes,
-            variant_classes=option('orientation', orientation, _ORIENTATIONS),
+            variant_classes=option('orientation', orientation, _SEPARATOR_ORIENTATION_CLASSES),
             **kwargs,
         )
         self._props['role'] = 'none' if decorative else 'separator'

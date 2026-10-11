@@ -49,6 +49,8 @@ _SIZES = {
     'icon': 'size-9',
 }
 
+_ICON_POSITIONS = {'left': 'left', 'right': 'right'}
+
 
 def button_classes(variant: str = 'default', size: str = 'default') -> str:
     """Compose the standard button styling, for elements that render as a button.
@@ -89,6 +91,7 @@ class Button(ShadcnElement, default_classes=_BASE):
                  classes: str | Iterable[str] | None = None,
                  **kwargs: Any,
                  ) -> None:
+        icon_position = option('button icon position', icon_position, _ICON_POSITIONS)
         super().__init__(
             tag='button',
             classes=classes,

@@ -12,7 +12,7 @@ from typing import Any
 
 from nicegui.elements.mixins.value_element import ValueElement
 
-from .base import ShadcnElement, normalize_options
+from .base import ShadcnElement, _ORIENTATIONS, normalize_options, option
 
 __all__ = [
     'RadioGroup', 'Slider', 'Toggle', 'ToggleGroup',
@@ -61,7 +61,7 @@ class RadioGroup(ShadcnElement, ValueElement, component='shadcn_radio_group.vue'
                  ) -> None:
         super().__init__(value=value, on_value_change=on_change, classes=classes, **kwargs)
         self._props['options'] = normalize_options(options or [])
-        self._props['orientation'] = orientation
+        self._props['orientation'] = option('radio group orientation', orientation, _ORIENTATIONS)
         if disabled:
             self._props['disabled'] = True
 
@@ -98,7 +98,7 @@ class Slider(ShadcnElement, ValueElement, component='shadcn_slider.vue', default
         self._props['min'] = min
         self._props['max'] = max
         self._props['step'] = step
-        self._props['orientation'] = orientation
+        self._props['orientation'] = option('slider orientation', orientation, _ORIENTATIONS)
         if disabled:
             self._props['disabled'] = True
 
@@ -173,7 +173,7 @@ class ToggleGroup(ShadcnElement, ValueElement, component='shadcn_toggle_group.vu
         super().__init__(value=value, on_value_change=on_change, classes=classes, **kwargs)
         self._props['options'] = normalize_options(options or [])
         self._props['type'] = 'multiple' if multiple else 'single'
-        self._props['orientation'] = orientation
+        self._props['orientation'] = option('toggle group orientation', orientation, _ORIENTATIONS)
         if disabled:
             self._props['disabled'] = True
 

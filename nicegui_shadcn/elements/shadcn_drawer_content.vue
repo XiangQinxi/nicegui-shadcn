@@ -3,11 +3,12 @@
     <DrawerOverlay
       class="fixed inset-0 z-50 bg-black/50 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0"
     />
+    <!-- The panel's classes come from Python (`DrawerContent.default_classes`
+         plus the geometry variant); see the note in shadcn_select.vue. The
+         `side` prop is still read here for the drag handle and the padding. -->
     <DrawerContent
       v-bind="$attrs"
       data-shadcn_drawer_content
-      :class="panelClasses"
-      class="fixed z-50 flex flex-col gap-4 bg-background shadow-lg transition ease-in-out data-[state=closed]:animate-out data-[state=closed]:duration-300 data-[state=open]:animate-in data-[state=open]:duration-500"
     >
       <DrawerHandle
         v-if="side === 'bottom' || side === 'top'"
@@ -58,13 +59,6 @@ import {
   DrawerTitle,
 } from 'reka-ui';
 
-const PANELS = {
-  bottom: 'inset-x-0 bottom-0 max-h-[80vh] rounded-t-xl border-t',
-  top: 'inset-x-0 top-0 max-h-[80vh] rounded-b-xl border-b',
-  right: 'inset-y-0 right-0 h-full w-3/4 border-l sm:max-w-sm',
-  left: 'inset-y-0 left-0 h-full w-3/4 border-r sm:max-w-sm',
-};
-
 export default {
   name: 'ShadcnDrawerContent',
   components: { DrawerClose, DrawerContent, DrawerDescription, DrawerHandle, DrawerOverlay, DrawerPortal, DrawerTitle },
@@ -75,11 +69,6 @@ export default {
     ariaLabel: { type: String, default: 'Drawer' },
     side: { type: String, default: 'bottom' },
     closable: { type: Boolean, default: true },
-  },
-  computed: {
-    panelClasses() {
-      return PANELS[this.side] || PANELS.bottom;
-    },
   },
 };
 </script>

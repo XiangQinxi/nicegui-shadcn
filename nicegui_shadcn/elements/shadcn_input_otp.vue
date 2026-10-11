@@ -1,8 +1,5 @@
 <template>
-  <div
-    v-bind="$attrs"
-    class="relative flex items-center gap-2 has-disabled:opacity-50"
-  >
+  <div v-bind="$attrs">
     <!--
       One invisible native input carries the whole value. Letting the browser own
       the text field buys us real key handling, paste, autofill, the mobile

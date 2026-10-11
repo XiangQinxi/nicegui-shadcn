@@ -32,6 +32,11 @@ CLASS_CONSTANT_RE = re.compile(r'^_?[A-Z][A-Z0-9_]*_(BASE|CLASSES|VARIANTS|SIZES
 # The lookbehind rejects the bound forms ``:class`` and ``v-bind:class``, whose
 # value is a JavaScript expression and therefore not a class list.
 CLASS_ATTR_RE = re.compile(r'(?<![\w:-])class="([^"]*)"')
+# Any class binding at all, used for the ``$attrs`` invariant below.
+ANY_CLASS_ATTR_RE = re.compile(r'(?:^|\s)(?:class|:class|v-bind:class)="')
+# One opening tag, quoted attribute values kept together so a ``>`` or a newline
+# inside one cannot end the match early.
+TAG_RE = re.compile(r'<([A-Za-z][\w.-]*)((?:"[^"]*"|\'[^\']*\'|[^>"\'])*)>')
 
 
 def escape_class(cls: str) -> str:
@@ -94,6 +99,30 @@ def classes_in_vue(path: Path) -> list[tuple[str, str]]:
     return [(t, path.name) for body in CLASS_ATTR_RE.findall(text) for t in body.split()]
 
 
+def attrs_class_conflicts(path: Path) -> list[str]:
+    """Templates that style an element which also forwards ``$attrs``.
+
+    A tag carrying ``v-bind="$attrs"`` receives the classes that
+    :class:`~nicegui_shadcn.elements.base.ShadcnElement` already merged
+    (``default_classes`` -> ``variant_classes`` -> the caller's ``classes``).
+    Vue applies the tag's *own* class binding on top of that, so a literal
+    ``class="..."`` finishes last and always wins: the caller's ``classes=``
+    would silently have no effect on the properties the literal sets. Classes
+    therefore belong in the element's Python ``default_classes`` or
+    ``variant_classes``, where ``tw_merge`` can resolve the conflict. The same
+    applies to a bound ``:class``, which is evaluated per render.
+    """
+    conflicts: list[str] = []
+    for tag, attrs in TAG_RE.findall(path.read_text(encoding='utf-8')):
+        if '$attrs' not in attrs:
+            continue
+        match = ANY_CLASS_ATTR_RE.search(attrs)
+        if match:
+            conflicts.append(f'{path.name}: <{tag}> forwards $attrs but also sets '
+                             f'{match.group(0).strip()!r}')
+    return conflicts
+
+
 def main() -> int:
     if not CSS.exists():
         print(f'!! {CSS} is missing — run the Tailwind build first')
@@ -112,8 +141,21 @@ def main() -> int:
     print(f'checked {len(seen)} class tokens')
     for token, origin in missing:
         print(f'MISSING  {token}  (first seen in {origin})')
+
+    conflicts: list[str] = []
+    for path in sorted(PACKAGE.glob('elements/*.vue')):
+        conflicts += attrs_class_conflicts(path)
+    print(f'checked {len(list(PACKAGE.glob("elements/*.vue")))} templates '
+          'for classes on elements that forward $attrs')
+    for line in conflicts:
+        print(f'CONFLICT  {line}')
+
     if missing:
         print(f'\n{len(missing)} class(es) have no rule in static/shadcn.css')
+    if conflicts:
+        print(f'\n{len(conflicts)} element(s) style themselves next to $attrs; move those '
+              'classes into default_classes/variant_classes')
+    if missing or conflicts:
         return 1
     print('\nall referenced classes are present in static/shadcn.css')
     return 0

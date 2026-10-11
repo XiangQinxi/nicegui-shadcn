@@ -12,7 +12,6 @@
     :readonly="readonly"
     :locale="locale"
     :calendar-label="ariaLabel"
-    class="w-fit p-3"
     @update:model-value="onSelect"
   >
     <div class="flex flex-col gap-4">

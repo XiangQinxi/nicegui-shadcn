@@ -28,7 +28,18 @@ __all__ = [
     'toast', 'toast_provider',
 ]
 
-_TOAST_VARIANTS = {name: name for name in ('default', 'destructive', 'success')}
+_TOAST_VARIANT_CLASSES = {
+    'default': 'border bg-background text-foreground',
+    'destructive': 'border-destructive bg-destructive text-white',
+    'success': 'border bg-background text-foreground',
+}
+#: The toast card itself; the caller's ``classes`` reach it through ``$attrs``.
+_TOAST_CLASSES = (
+    'group pointer-events-auto relative flex w-full items-start justify-between gap-3 overflow-hidden '
+    'rounded-md border p-4 shadow-lg data-[state=closed]:animate-out '
+    'data-[state=closed]:fade-out-80 data-[state=closed]:slide-out-to-right-full '
+    'data-[state=open]:animate-in data-[state=open]:slide-in-from-bottom-full'
+)
 _TOAST_POSITIONS = {
     name: name for name in (
         'top-left', 'top-center', 'top-right',
@@ -64,7 +75,8 @@ class ToastProvider(ShadcnElement, component='shadcn_toast_provider.vue'):
         self._props['swipeDirection'] = option('toast swipe direction', swipe_direction, _TOAST_SWIPE_DIRECTIONS)
 
 
-class Toast(_Openable, ShadcnElement, ValueElement, component='shadcn_toast.vue'):
+class Toast(_Openable, ShadcnElement, ValueElement, component='shadcn_toast.vue',
+            default_classes=_TOAST_CLASSES):
     """One notification inside a :class:`ToastProvider`.
 
     :param title: the bold first line.
@@ -92,10 +104,12 @@ class Toast(_Openable, ShadcnElement, ValueElement, component='shadcn_toast.vue'
                  classes: str | Iterable[str] | None = None,
                  **kwargs: Any,
                  ) -> None:
-        super().__init__(value=bool(value), on_value_change=on_change, classes=classes, **kwargs)
+        super().__init__(value=bool(value), on_value_change=on_change, classes=classes,
+                         variant_classes=option('toast variant', variant, _TOAST_VARIANT_CLASSES),
+                         **kwargs)
         self._props['title'] = title
         self._props['description'] = description
-        self._props['variant'] = option('toast variant', variant, _TOAST_VARIANTS)
+        self._props['variant'] = variant
         if duration is not None:
             self._props['duration'] = int(duration)
         if not closable:

@@ -23,7 +23,30 @@ __all__ = [
     'sheet', 'sheet_content', 'sheet_footer', 'sheet_trigger',
 ]
 
-_SHEET_SIDES = {name: name for name in ('right', 'left', 'top', 'bottom')}
+#: A sheet is a dialog that slides in from an edge, so it reuses the dialog
+#: primitives and only swaps the panel geometry; ``'center'`` is deliberately
+#: not offered -- that is what :class:`~nicegui_shadcn.elements.shadcn_overlay.DialogContent`
+#: is for.
+_SHEET_PANEL_VARIANTS = {
+    'right': 'inset-y-0 right-0 h-full w-3/4 border-l p-6 sm:max-w-sm '
+             'data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right',
+    'left': 'inset-y-0 left-0 h-full w-3/4 border-r p-6 sm:max-w-sm '
+            'data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left',
+    'top': 'inset-x-0 top-0 h-auto border-b p-6 data-[state=closed]:slide-out-to-top '
+           'data-[state=open]:slide-in-from-top',
+    'bottom': 'inset-x-0 bottom-0 h-auto border-t p-6 data-[state=closed]:slide-out-to-bottom '
+              'data-[state=open]:slide-in-from-bottom',
+}
+
+#: What every sheet panel shares, whatever edge it hugs.
+_SHEET_PANEL_CLASSES = (
+    'fixed z-50 flex flex-col gap-4 bg-background shadow-lg transition ease-in-out '
+    'data-[state=closed]:animate-out data-[state=closed]:duration-300 '
+    'data-[state=open]:animate-in data-[state=open]:duration-500 '
+    'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0'
+)
+
+_SHEET_SIDES = {name: name for name in _SHEET_PANEL_VARIANTS}
 
 
 class Sheet(_Openable, ShadcnElement, ValueElement, component='shadcn_dialog.vue'):
@@ -72,7 +95,8 @@ class SheetTrigger(ShadcnElement, TextElement, component='shadcn_dialog_trigger.
             self.on('click', on_click)
 
 
-class SheetContent(ShadcnElement, component='shadcn_sheet_content.vue'):
+class SheetContent(ShadcnElement, component='shadcn_sheet_content.vue',
+                   default_classes=_SHEET_PANEL_CLASSES):
     """The sliding panel of a :class:`Sheet`.
 
     :param title: heading text. When omitted the sheet stays accessible but
@@ -82,7 +106,8 @@ class SheetContent(ShadcnElement, component='shadcn_sheet_content.vue'):
         ``'top'`` or ``'bottom'``.
     :param closable: render the small close button in the panel corner.
     :param aria_label: fallback heading used when ``title`` is empty.
-    :param classes: classes for the panel itself, which lives in a portal.
+    :param classes: classes for the panel itself, which lives in a portal, merged
+        with ``cn()`` semantics.
     """
 
     def __init__(self,
@@ -95,11 +120,12 @@ class SheetContent(ShadcnElement, component='shadcn_sheet_content.vue'):
                  classes: str | Iterable[str] | None = None,
                  **kwargs: Any,
                  ) -> None:
-        super().__init__(classes=classes, **kwargs)
+        side = option('sheet side', side, _SHEET_SIDES)
+        super().__init__(classes=classes, variant_classes=_SHEET_PANEL_VARIANTS[side], **kwargs)
         self._props['title'] = title
         self._props['description'] = description
         self._props['ariaLabel'] = aria_label
-        self._props['side'] = option('sheet side', side, _SHEET_SIDES)
+        self._props['side'] = side
         if not closable:
             self._props['closable'] = False
 

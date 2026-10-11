@@ -3,8 +3,6 @@
     :open="modelValue"
     :duration="duration"
     data-shadcn_toast
-    :class="variantClasses"
-    class="group pointer-events-auto relative flex w-full items-start justify-between gap-3 overflow-hidden rounded-md border p-4 shadow-lg data-[state=closed]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:slide-out-to-right-full data-[state=open]:animate-in data-[state=open]:slide-in-from-bottom-full"
     @update:open="$emit('update:modelValue', $event)"
   >
     <div class="flex flex-col gap-1">
@@ -38,12 +36,6 @@
 <script>
 import { ToastClose, ToastDescription, ToastRoot, ToastTitle } from 'reka-ui';
 
-const VARIANTS = {
-  default: 'border bg-background text-foreground',
-  destructive: 'border-destructive bg-destructive text-white',
-  success: 'border bg-background text-foreground',
-};
-
 export default {
   name: 'ShadcnToast',
   components: { ToastClose, ToastDescription, ToastRoot, ToastTitle },
@@ -60,10 +52,5 @@ export default {
     closable: { type: Boolean, default: true },
   },
   emits: ['update:modelValue'],
-  computed: {
-    variantClasses() {
-      return VARIANTS[this.variant] || VARIANTS.default;
-    },
-  },
 };
 </script>

@@ -43,6 +43,19 @@ CASES: list[tuple[tuple[str, ...], str]] = [
     (('shadow-sm', 'shadow-red-500'), 'shadow-sm shadow-red-500'),
     (('ring-2 ring-ring', 'ring-0'), 'ring-ring ring-0'),
     (('ring-offset-2', 'ring-offset-background'), 'ring-offset-2 ring-offset-background'),
+    # an arbitrary *length* is a width and an arbitrary colour is a colour, so
+    # the two no longer evict each other: reading `ring-[3px]` as a colour used
+    # to let `ring-ring/50` drop it, which silently removed every focus ring in
+    # the library (`ring-ring/50` only sets `--tw-ring-color`)
+    (('focus-visible:ring-[3px] focus-visible:ring-ring/50',),
+     'focus-visible:ring-[3px] focus-visible:ring-ring/50'),
+    (('ring-[3px]', 'ring-red-500'), 'ring-[3px] ring-red-500'),
+    (('ring-2', 'ring-[3px]'), 'ring-[3px]'),
+    (('ring-[#fff]', 'ring-red-500'), 'ring-red-500'),
+    (('ring-offset-[2px]', 'ring-offset-background'),
+     'ring-offset-[2px] ring-offset-background'),
+    (('border-[3px] border-red-500',), 'border-[3px] border-red-500'),
+    (('border-t-[3px]', 'border-t-2'), 'border-t-2'),
     # font weight vs family
     (('font-medium', 'font-bold'), 'font-bold'),
     (('font-medium', 'font-mono'), 'font-medium font-mono'),

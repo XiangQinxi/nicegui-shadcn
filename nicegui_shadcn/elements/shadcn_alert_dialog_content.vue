@@ -6,7 +6,6 @@
     <AlertDialogContent
       v-bind="$attrs"
       data-shadcn_alert_dialog_content
-      class="fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl border bg-background p-6 shadow-lg data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in data-[state=open]:fade-in-0 sm:max-w-lg"
     >
       <div class="flex flex-col gap-2">
         <AlertDialogTitle :class="title ? 'text-lg leading-none font-semibold' : 'sr-only'">

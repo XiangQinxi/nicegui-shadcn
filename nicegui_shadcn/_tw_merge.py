@@ -164,6 +164,14 @@ _RADIUS_SIZES = {'none', 'xs', 'sm', 'md', 'lg', 'xl', '2xl', '3xl', '4xl',
 _BORDER_SIDES = {'x', 'y', 't', 'r', 'b', 'l', 's', 'e'}
 _RING_WIDTHS = {'0', '1', '2', '4', '8', 'inset'}
 _SHADOW_SIZES = {'sm', 'md', 'lg', 'xl', '2xl', 'inner', 'none'}
+#: Units that make an arbitrary value a *length* rather than a colour.  Longest
+#: first, so that ``1.5rem`` is not read as a bare ``1.5re`` plus ``m``.
+_LENGTH_UNITS = tuple(sorted(
+    {'px', 'rem', 'em', '%', 'ch', 'ex', 'pt', 'pc', 'in', 'cm', 'mm', 'q',
+     'cap', 'ic', 'lh', 'rlh', 'vh', 'vw', 'vi', 'vb', 'dvh', 'lvh', 'svh',
+     'dvw', 'lvw', 'svw'},
+    key=len, reverse=True,
+))
 _FONT_WEIGHTS = {'thin', 'extralight', 'light', 'normal', 'medium', 'semibold',
                  'bold', 'extrabold', 'black'}
 _FONT_FAMILIES = {'sans', 'serif', 'mono'}
@@ -229,6 +237,34 @@ _GROUP_PATHS: dict[str, tuple[str, ...]] = {
 }
 
 
+def _is_arbitrary_length(value: str) -> bool:
+    """Is ``value`` an arbitrary *length* such as ``[3px]`` (not a colour)?
+
+    A width and a colour both reach the table as "an arbitrary value", so the two
+    can only be told apart by looking at the unit: ``[3px]`` is a length, while a
+    hex or ``oklch()`` colour is not.  Reading a length as a colour let a later
+    colour evict it, which is how every focus ring in the library quietly lost
+    its width -- the surviving focus-visible ring rule only sets
+    ``--tw-ring-color``, so the ring itself disappeared.  Anything that is not a
+    number plus a known unit -- a ``calc()`` expression, a bare colour -- keeps
+    the colour reading.
+    """
+    if not (value.startswith('[') and value.endswith(']')):
+        return False
+    inner = value[1:-1].lstrip('-')
+    for unit in _LENGTH_UNITS:
+        if inner.endswith(unit):
+            inner = inner[:-len(unit)]
+            break
+    else:
+        return False
+    try:
+        float(inner)
+    except ValueError:
+        return False
+    return True
+
+
 def _path(group: str) -> tuple[str, ...]:
     """Return the ancestor path of a conflict group.
 
@@ -275,6 +311,11 @@ def _group(base: str) -> str:
             return 'border-w'
         if rest in ('solid', 'dashed', 'dotted', 'double', 'hidden', 'none'):
             return 'border-style'
+        if _is_arbitrary_length(rest):
+            return 'border-w'
+        side, _, size = rest.partition('-')
+        if _is_arbitrary_length(size) and side in _BORDER_SIDES:
+            return f'border-w-{side}'
         return 'border-color'
     if b.startswith('rounded-'):
         rest = b[len('rounded-'):]
@@ -296,10 +337,13 @@ def _group(base: str) -> str:
         return 'shadow-color'
     if b.startswith('ring-'):
         rest = b[5:]
-        if rest in _RING_WIDTHS:
+        if rest in _RING_WIDTHS or _is_arbitrary_length(rest):
             return 'ring-w'
         if rest.startswith('offset-'):
-            return 'ring-offset-w' if rest[7:].isdigit() else 'ring-offset-color'
+            offset = rest[7:]
+            if offset.isdigit() or _is_arbitrary_length(offset):
+                return 'ring-offset-w'
+            return 'ring-offset-color'
         return 'ring-color'
     if b.startswith('font-'):
         rest = b[5:]

@@ -21,6 +21,9 @@ import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+# ``python tests/test_render.py`` puts ``tests/`` on ``sys.path``, not the repo root, so the
+# package would not be importable from the invariant check below.
+sys.path.insert(0, str(ROOT))
 ELEMENTS = ROOT / 'nicegui_shadcn' / 'elements'
 # A port of its own, so the test can run while the demo is being looked at.
 PORT = int(os.environ.get('SHADCN_TEST_PORT', '8137'))

@@ -16,6 +16,11 @@ from .base import ShadcnElement
 
 __all__ = ['Calendar', 'calendar']
 
+# The root's classes live here rather than in the template: ``inheritAttrs: false``
+# forwards the caller's ``classes`` to the same `CalendarRoot`, and a literal class in
+# the template is merged by Vue *after* ``tw_merge`` ran, so it could never be displaced.
+_CALENDAR_CLASSES = 'w-fit p-3'
+
 
 def _iso_date(value: Any) -> str:
     """Normalize a date-like value to ``YYYY-MM-DD`` (or an empty string)."""
@@ -28,7 +33,8 @@ def _iso_date(value: Any) -> str:
     return str(value)
 
 
-class Calendar(ShadcnElement, ValueElement, component='shadcn_calendar.vue'):
+class Calendar(ShadcnElement, ValueElement, component='shadcn_calendar.vue',
+               default_classes=_CALENDAR_CLASSES):
     """A single-month calendar.
 
     :param value: the selected day, as a :class:`datetime.date` or an ISO
@@ -83,6 +89,24 @@ class Calendar(ShadcnElement, ValueElement, component='shadcn_calendar.vue'):
 
     def _value_to_model_value(self, value: Any) -> str:
         return _iso_date(value)
+
+    def set_min(self, value: date | datetime | str | None) -> None:
+        """Change the earliest selectable day.
+
+        :param value: the new lower bound, as a :class:`datetime.date` or an ISO
+            ``YYYY-MM-DD`` string; ``None`` removes the bound.
+        """
+        self._props['minValue'] = _iso_date(value)
+        self.update()
+
+    def set_max(self, value: date | datetime | str | None) -> None:
+        """Change the latest selectable day.
+
+        :param value: the new upper bound, as a :class:`datetime.date` or an ISO
+            ``YYYY-MM-DD`` string; ``None`` removes the bound.
+        """
+        self._props['maxValue'] = _iso_date(value)
+        self.update()
 
 
 def calendar(value: date | datetime | str | None = None, **kwargs: Any) -> Calendar:

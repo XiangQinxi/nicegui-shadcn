@@ -97,6 +97,16 @@ def option(kind: str, value: str, options: Mapping[str, T]) -> T:
         raise ValueError(f'Unknown {kind} {value!r}. Valid options are: {valid}') from None
 
 
+# Shared placement vocabularies: reka-ui spells the same four sides and three
+# alignments everywhere, so the floating components use these tables instead of
+# each declaring its own copy.
+_SIDES = {'top': 'top', 'right': 'right', 'bottom': 'bottom', 'left': 'left'}
+_ALIGNMENTS = {'start': 'start', 'center': 'center', 'end': 'end'}
+# reka-ui spells the two orientations the same way for its accordion, tabs,
+# slider and toggle group.
+_ORIENTATIONS = {'vertical': 'vertical', 'horizontal': 'horizontal'}
+
+
 class ShadcnElement(Element):
     """Base class of all shadcn/ui elements.
 

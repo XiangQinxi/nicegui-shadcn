@@ -12,12 +12,19 @@ from typing import Any
 
 from nicegui.elements.mixins.value_element import ValueElement
 
-from .base import ShadcnElement, _Openable
+from .base import ShadcnElement, _ALIGNMENTS, _SIDES, _Openable, option
 
 __all__ = [
     'HoverCard', 'HoverCardContent', 'HoverCardTrigger',
     'hover_card', 'hover_card_content', 'hover_card_trigger',
 ]
+
+#: The hover card panel; the caller's ``classes`` reach it through ``$attrs``.
+_HOVER_CARD_CLASSES = (
+    'z-50 w-64 rounded-md border bg-popover p-4 text-popover-foreground shadow-md outline-none '
+    'data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:animate-in '
+    'data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95'
+)
 
 
 class HoverCard(_Openable, ShadcnElement, ValueElement, component='shadcn_hover_card.vue'):
@@ -73,7 +80,8 @@ class HoverCardTrigger(ShadcnElement, component='shadcn_hover_card_trigger.vue')
         self._props['asChild'] = bool(as_child)
 
 
-class HoverCardContent(ShadcnElement, component='shadcn_hover_card_content.vue'):
+class HoverCardContent(ShadcnElement, component='shadcn_hover_card_content.vue',
+                       default_classes=_HOVER_CARD_CLASSES):
     """The floating panel of a :class:`HoverCard`.
 
     :param side: ``'top'``, ``'right'``, ``'bottom'`` or ``'left'``.
@@ -89,8 +97,8 @@ class HoverCardContent(ShadcnElement, component='shadcn_hover_card_content.vue')
                  **kwargs: Any,
                  ) -> None:
         super().__init__(classes=classes, **kwargs)
-        self._props['side'] = side
-        self._props['align'] = align
+        self._props['side'] = option('hover card side', side, _SIDES)
+        self._props['align'] = option('hover card align', align, _ALIGNMENTS)
 
 
 def hover_card(value: bool | None = None, **kwargs: Any) -> HoverCard:

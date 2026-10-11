@@ -19,8 +19,21 @@ from .base import ShadcnElement, normalize_options
 
 __all__ = ['Select', 'select']
 
+# The trigger's classes live here rather than in the template: the caller's ``classes``
+# reach that button through ``$attrs``, and a literal class list in the template is
+# merged by Vue *after* ``tw_merge`` ran, so it would always win. Keeping the list in
+# Python lets ``tw_merge`` resolve it against ``classes='h-12'`` and friends.
+_SELECT_TRIGGER_CLASSES = (
+    'flex h-9 w-full items-center justify-between gap-2 rounded-md border border-input '
+    'bg-transparent px-3 py-2 text-sm whitespace-nowrap shadow-xs outline-none '
+    'transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] '
+    'focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 '
+    'dark:bg-input/30 dark:hover:bg-input/50'
+)
 
-class Select(ShadcnElement, ValueElement, component='shadcn_select.vue'):
+
+class Select(ShadcnElement, ValueElement, component='shadcn_select.vue',
+             default_classes=_SELECT_TRIGGER_CLASSES):
     """A dropdown list of options.
 
     :param options: the choices, in any of the shapes
@@ -28,8 +41,10 @@ class Select(ShadcnElement, ValueElement, component='shadcn_select.vue'):
     :param value: the initially selected value.
     :param placeholder: text shown while nothing is selected.
     :param disabled: render the control disabled.
-    :param on_change: callback invoked with the new value when the selection changes.
-    :param classes: extra utility classes, merged with ``cn()`` semantics.
+    :param on_change: callback invoked with the value-change event when the selection
+        changes; read ``e.value`` for the new value.
+    :param classes: extra utility classes for the trigger button, merged with ``cn()``
+        semantics.
     """
 
     def __init__(self,
@@ -45,13 +60,22 @@ class Select(ShadcnElement, ValueElement, component='shadcn_select.vue'):
         super().__init__(value=value, on_value_change=on_change, classes=classes, **kwargs)
         self._props['options'] = normalize_options(options or [])
         self._props['placeholder'] = placeholder
-        if disabled:
-            self._props['disabled'] = True
+        self._props['disabled'] = bool(disabled)
 
     def _value_to_model_value(self, value: Any) -> str:
         # reka-ui shows the placeholder for `undefined`, and `''` is simply not a
         # valid item value, so both mean "nothing selected".
         return '' if value is None else str(value)
+
+    @property
+    def disabled(self) -> bool:
+        """Whether the control can be changed."""
+        return bool(self._props['disabled'])
+
+    @disabled.setter
+    def disabled(self, value: bool) -> None:
+        self._props['disabled'] = bool(value)
+        self.update()
 
     def set_options(self, options: Mapping[str, Any] | Iterable[Any]) -> None:
         """Replace the list of choices.

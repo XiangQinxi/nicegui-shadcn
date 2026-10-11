@@ -4,11 +4,10 @@
     :disabled="disabled"
     @update:model-value="$emit('update:modelValue', $event)"
   >
-    <SelectTrigger
-      v-bind="$attrs"
-      data-shadcn_select
-      class="flex h-9 w-full items-center justify-between gap-2 rounded-md border border-input bg-transparent px-3 py-2 text-sm whitespace-nowrap shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-input/30 dark:hover:bg-input/50"
-    >
+    <!-- No literal classes here: the caller's `classes` reach this element through $attrs, and a
+         literal class list would be merged by Vue *after* tw_merge ran, so `classes='h-12'` could
+         never displace the default `h-9`. The trigger's styling lives in shadcn_select.py. -->
+    <SelectTrigger v-bind="$attrs" data-shadcn_select>
       <SelectValue :placeholder="placeholder" />
       <SelectIcon as-child>
         <svg

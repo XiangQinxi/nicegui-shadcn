@@ -30,7 +30,7 @@ from typing import Any
 
 from nicegui.elements.mixins.value_element import ValueElement
 
-from .base import ShadcnElement, normalize_options
+from .base import ShadcnElement, _ORIENTATIONS, normalize_options, option
 
 __all__ = [
     'Tabs', 'TabsContent', 'TabsList',
@@ -73,7 +73,7 @@ class Tabs(ShadcnElement, ValueElement, component='shadcn_tabs.vue', default_cla
                  **kwargs: Any,
                  ) -> None:
         super().__init__(value=value, on_value_change=on_change, classes=classes, **kwargs)
-        self._props['orientation'] = orientation
+        self._props['orientation'] = option('tabs orientation', orientation, _ORIENTATIONS)
 
     def _value_to_model_value(self, value: Any) -> str:
         # reka-ui treats `undefined` as uncontrolled and `''` as "nothing
@@ -102,7 +102,7 @@ class TabsList(ShadcnElement, component='shadcn_tabs_list.vue', default_classes=
                  ) -> None:
         super().__init__(classes=classes, **kwargs)
         self._props['tabs'] = normalize_options(tabs or [])
-        self._props['orientation'] = orientation
+        self._props['orientation'] = option('tabs list orientation', orientation, _ORIENTATIONS)
         self._props['triggerClasses'] = _TABS_TRIGGER_CLASSES
 
     def set_tabs(self, tabs: Mapping[str, Any] | Iterable[Any]) -> None:
