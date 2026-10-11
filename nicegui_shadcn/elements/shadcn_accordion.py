@@ -20,7 +20,7 @@ from typing import Any
 from nicegui.elements.mixins.text_element import TextElement
 from nicegui.elements.mixins.value_element import ValueElement
 
-from .base import ShadcnElement, _ORIENTATIONS, option
+from .base import ShadcnElement, _Disableable, _ORIENTATIONS, option
 
 __all__ = [
     'Accordion', 'AccordionContent', 'AccordionItem', 'AccordionTrigger',
@@ -87,7 +87,7 @@ class Accordion(ShadcnElement, ValueElement, component='shadcn_accordion.vue', d
         return _as_model_value(value)
 
 
-class AccordionItem(ShadcnElement, component='shadcn_accordion_item.vue', default_classes=_ACCORDION_ITEM_CLASSES):
+class AccordionItem(_Disableable, ShadcnElement, component='shadcn_accordion_item.vue', default_classes=_ACCORDION_ITEM_CLASSES):
     """One collapsible section; put a trigger and a content element inside.
 
     :param value: the value identifying this section, matched against the
@@ -105,8 +105,7 @@ class AccordionItem(ShadcnElement, component='shadcn_accordion_item.vue', defaul
                  ) -> None:
         super().__init__(classes=classes, **kwargs)
         self._props['value'] = str(value)
-        if disabled:
-            self._props['disabled'] = True
+        self._init_disabled(disabled)
 
 
 class AccordionTrigger(ShadcnElement, TextElement, component='shadcn_accordion_trigger.vue',

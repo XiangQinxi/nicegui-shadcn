@@ -12,7 +12,7 @@ from typing import Any
 
 from nicegui.elements.mixins.value_element import ValueElement
 
-from .base import ShadcnElement
+from .base import ShadcnElement, _Disableable
 
 __all__ = [
     'REGEXP_ONLY_CHARS',
@@ -35,7 +35,7 @@ REGEXP_ONLY_DIGITS_AND_CHARS = r'^[a-zA-Z0-9]+$'
 _INPUT_OTP_CLASSES = 'relative flex items-center gap-2 has-disabled:opacity-50'
 
 
-class InputOTP(ShadcnElement, ValueElement, component='shadcn_input_otp.vue',
+class InputOTP(_Disableable, ShadcnElement, ValueElement, component='shadcn_input_otp.vue',
                default_classes=_INPUT_OTP_CLASSES):
     """A one-time-password field rendered as a row of character slots.
 
@@ -87,7 +87,7 @@ class InputOTP(ShadcnElement, ValueElement, component='shadcn_input_otp.vue',
         if pattern:
             self._props['pattern'] = str(pattern)
         self._props['masked'] = bool(masked)
-        self._props['disabled'] = bool(disabled)
+        self._init_disabled(disabled)
         self._props['inputmode'] = str(inputmode)
         self._props['ariaLabel'] = str(aria_label)
 

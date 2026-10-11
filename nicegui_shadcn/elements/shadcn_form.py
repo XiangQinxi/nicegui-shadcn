@@ -13,7 +13,7 @@ from nicegui.element import Element
 from nicegui.elements.mixins.text_element import TextElement
 from nicegui.elements.mixins.value_element import ValueElement
 
-from .base import ShadcnElement
+from .base import ShadcnElement, _Disableable
 
 __all__ = [
     'Checkbox', 'Input', 'Label', 'Switch', 'Textarea',
@@ -72,7 +72,7 @@ _TEXTAREA_CLASSES = (
 )
 
 
-class Input(ShadcnElement, ValueElement, component='shadcn_input.vue', default_classes=_INPUT_CLASSES):
+class Input(_Disableable, ShadcnElement, ValueElement, component='shadcn_input.vue', default_classes=_INPUT_CLASSES):
     """A single-line text field.
 
     :param value: the initial value.
@@ -109,15 +109,14 @@ class Input(ShadcnElement, ValueElement, component='shadcn_input.vue', default_c
         self._props['type'] = type
         if placeholder is not None:
             self._props['placeholder'] = placeholder
-        if disabled:
-            self._props['disabled'] = True
+        self._init_disabled(disabled)
         if readonly:
             self._props['readonly'] = True
         if autocomplete is not None:
             self._props['autocomplete'] = autocomplete
 
 
-class Textarea(ShadcnElement, ValueElement, component='shadcn_textarea.vue', default_classes=_TEXTAREA_CLASSES):
+class Textarea(_Disableable, ShadcnElement, ValueElement, component='shadcn_textarea.vue', default_classes=_TEXTAREA_CLASSES):
     """A multi-line text field.
 
     :param value: the initial value.
@@ -152,8 +151,7 @@ class Textarea(ShadcnElement, ValueElement, component='shadcn_textarea.vue', def
             self._props['placeholder'] = placeholder
         if rows is not None:
             self._props['rows'] = rows
-        if disabled:
-            self._props['disabled'] = True
+        self._init_disabled(disabled)
         if readonly:
             self._props['readonly'] = True
 
@@ -163,7 +161,7 @@ class Textarea(ShadcnElement, ValueElement, component='shadcn_textarea.vue', def
 # --------------------------------------------------------------------------- #
 
 
-class Checkbox(ShadcnElement, ValueElement, component='shadcn_checkbox.vue', default_classes='inline-flex'):
+class Checkbox(_Disableable, ShadcnElement, ValueElement, component='shadcn_checkbox.vue', default_classes='inline-flex'):
     """A checkbox with the shadcn/ui look.
 
     :param value: the initial checked state.
@@ -186,8 +184,7 @@ class Checkbox(ShadcnElement, ValueElement, component='shadcn_checkbox.vue', def
             classes=classes,
             **kwargs,
         )
-        if disabled:
-            self._props['disabled'] = True
+        self._init_disabled(disabled)
 
     def _value_to_model_value(self, value: Any) -> bool:
         return bool(value)
@@ -196,7 +193,7 @@ class Checkbox(ShadcnElement, ValueElement, component='shadcn_checkbox.vue', def
         return bool(value)
 
 
-class Switch(ShadcnElement, ValueElement, component='shadcn_switch.vue', default_classes='inline-flex'):
+class Switch(_Disableable, ShadcnElement, ValueElement, component='shadcn_switch.vue', default_classes='inline-flex'):
     """An on/off switch with the shadcn/ui look.
 
     :param value: the initial on/off state.
@@ -219,8 +216,7 @@ class Switch(ShadcnElement, ValueElement, component='shadcn_switch.vue', default
             classes=classes,
             **kwargs,
         )
-        if disabled:
-            self._props['disabled'] = True
+        self._init_disabled(disabled)
 
     def _value_to_model_value(self, value: Any) -> bool:
         return bool(value)

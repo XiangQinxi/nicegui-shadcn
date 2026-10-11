@@ -85,6 +85,15 @@ class DatePicker(Popover):
         if on_date_change is not None:
             self.on_date_change(on_date_change)
 
+    @property
+    def disabled(self) -> bool:
+        """Whether the whole picker is read-only."""
+        return self._calendar.disabled
+
+    @disabled.setter
+    def disabled(self, value: bool) -> None:
+        self._calendar.disabled = value
+
     def _label_for(self, value: str) -> str:
         return self._format_date(value) if value else self._placeholder
 

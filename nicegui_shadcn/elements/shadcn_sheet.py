@@ -89,8 +89,7 @@ class SheetTrigger(ShadcnElement, TextElement, component='shadcn_dialog_trigger.
                  **kwargs: Any,
                  ) -> None:
         super().__init__(text=text, classes=classes, **kwargs)
-        if as_child:
-            self._props['asChild'] = True
+        self._props['asChild'] = bool(as_child)
         if on_click is not None:
             self.on('click', on_click)
 

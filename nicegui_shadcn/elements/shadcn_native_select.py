@@ -13,7 +13,7 @@ from typing import Any
 
 from nicegui.elements.mixins.value_element import ValueElement
 
-from .base import ShadcnElement, normalize_options
+from .base import ShadcnElement, _Disableable, normalize_options
 
 __all__ = ['NativeSelect', 'native_select']
 
@@ -23,7 +23,7 @@ __all__ = ['NativeSelect', 'native_select']
 _NATIVE_SELECT_CLASSES = 'relative w-fit has-[select:disabled]:opacity-50'
 
 
-class NativeSelect(ShadcnElement, ValueElement, component='shadcn_native_select.vue',
+class NativeSelect(_Disableable, ShadcnElement, ValueElement, component='shadcn_native_select.vue',
                    default_classes=_NATIVE_SELECT_CLASSES):
     """A styled ``<select>`` built from the browser's own dropdown.
 
@@ -47,20 +47,10 @@ class NativeSelect(ShadcnElement, ValueElement, component='shadcn_native_select.
                  ) -> None:
         super().__init__(value=value, on_value_change=on_change, classes=classes, **kwargs)
         self._props['items'] = normalize_options(options or [])
-        self._props['disabled'] = bool(disabled)
+        self._init_disabled(disabled)
 
     def _value_to_model_value(self, value: Any) -> str:
         return '' if value is None else str(value)
-
-    @property
-    def disabled(self) -> bool:
-        """Whether the control can be changed."""
-        return bool(self._props['disabled'])
-
-    @disabled.setter
-    def disabled(self, value: bool) -> None:
-        self._props['disabled'] = bool(value)
-        self.update()
 
     def set_options(self, options: Mapping[str, str] | Iterable[Any] | None) -> None:
         """Replace the available entries.

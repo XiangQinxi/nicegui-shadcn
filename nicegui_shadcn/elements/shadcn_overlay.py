@@ -107,8 +107,7 @@ class DialogTrigger(ShadcnElement, TextElement, component='shadcn_dialog_trigger
                  **kwargs: Any,
                  ) -> None:
         super().__init__(text=text, classes=classes, **kwargs)
-        if as_child:
-            self._props['asChild'] = True
+        self._props['asChild'] = bool(as_child)
 
 
 class DialogContent(ShadcnElement, component='shadcn_dialog_content.vue',
@@ -219,8 +218,7 @@ class PopoverTrigger(ShadcnElement, TextElement, component='shadcn_popover_trigg
                  **kwargs: Any,
                  ) -> None:
         super().__init__(text=text, classes=classes, **kwargs)
-        if as_child:
-            self._props['asChild'] = True
+        self._props['asChild'] = bool(as_child)
 
 
 class PopoverContent(ShadcnElement, component='shadcn_popover_content.vue', default_classes=_POPOVER_CLASSES):

@@ -51,17 +51,27 @@ def normalize_options(options: Mapping[str, Any] | Iterable[Any]) -> list[dict[s
     * a sequence of ``(value, label)`` pairs,
     * a sequence of mappings with the keys ``value``, ``label``, ``disabled``,
       ``kind`` (``'item'``, ``'label'`` or ``'separator'``) and ``variant``
-      (``'default'`` or ``'destructive'``).
+      (``'default'`` or ``'destructive'``),
+    * a mapping ``{value: mapping}`` whose inner mapping uses those same keys.
 
     Everything is coerced to the plain JSON-safe shape the Vue templates expect.
+    An entry of an unsupported shape raises a :class:`ValueError` naming it.
 
     :param options: the choices to offer, in any of the shapes listed above.
     """
     if isinstance(options, Mapping):
-        return [{'value': str(key), 'label': str(value)} for key, value in options.items()]
+        # A mapping value may be the label itself or a full option mapping, which
+        # lets a caller write `{'day': 'Day', 'month': {'label': 'Month', 'disabled': True}}`.
+        items: Iterable[Any] = (
+            {'value': key, 'label': value} if not isinstance(value, Mapping)
+            else {**value, 'value': value.get('value', key)}
+            for key, value in options.items()
+        )
+    else:
+        items = options
 
     result: list[dict[str, Any]] = []
-    for item in options:
+    for item in items:
         if isinstance(item, str):
             result.append({'value': item, 'label': item})
         elif isinstance(item, Mapping):
@@ -74,7 +84,13 @@ def normalize_options(options: Mapping[str, Any] | Iterable[Any]) -> list[dict[s
                 'variant': str(item.get('variant', 'default')),
             })
         else:
-            value, label = item
+            try:
+                value, label = item
+            except (TypeError, ValueError):
+                raise ValueError(
+                    f'Unsupported option {item!r}: pass a string, a (value, label) pair or a '
+                    'mapping with the value/label/disabled/kind/variant keys',
+                ) from None
             result.append({'value': str(value), 'label': str(label)})
     return result
 
@@ -153,6 +169,37 @@ class ShadcnElement(Element):
 # degrades to a ``<div>`` with the props leaked as attributes -- no error, no warning.
 # Dropping the copy lets the normal MRO lookup find the real component again.
 del ShadcnElement.component
+
+
+class _Disableable:
+    """Mixin for the elements whose Vue component takes reka-ui's ``disabled`` prop.
+
+    The keyword arguments of the constructors cover the initial state; this adds
+    the same choice at runtime, which NiceGUI elements otherwise cannot express
+    (this version of NiceGUI has no enable/disable API).  ``_init_disabled`` only
+    sends the prop when it is set, which matches the ``default: false`` of every
+    ``disabled`` prop on the Vue side.
+
+    Not part of the public surface: it is mixed into the controls so that they all
+    spell the attribute the same way.
+    """
+
+    def _init_disabled(self, disabled: bool) -> None:
+        if disabled:
+            self._props['disabled'] = True  # type: ignore[attr-defined]
+
+    @property
+    def disabled(self) -> bool:
+        """Whether the control is disabled."""
+        return bool(self._props.get('disabled', False))  # type: ignore[attr-defined]
+
+    @disabled.setter
+    def disabled(self, value: bool) -> None:
+        if value:
+            self._props['disabled'] = True  # type: ignore[attr-defined]
+        else:
+            self._props.pop('disabled', None)  # type: ignore[attr-defined]
+        self.update()  # type: ignore[attr-defined]
 
 
 class _Openable:

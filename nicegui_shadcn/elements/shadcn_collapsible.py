@@ -21,7 +21,7 @@ from typing import Any
 from nicegui.elements.mixins.text_element import TextElement
 from nicegui.elements.mixins.value_element import ValueElement
 
-from .base import ShadcnElement, _Openable
+from .base import ShadcnElement, _Disableable, _Openable
 
 __all__ = [
     'Collapsible', 'CollapsibleContent', 'CollapsibleTrigger',
@@ -38,7 +38,7 @@ _COLLAPSIBLE_CONTENT_CLASSES = (
 )
 
 
-class Collapsible(_Openable, ShadcnElement, ValueElement, component='shadcn_collapsible.vue'):
+class Collapsible(_Disableable, _Openable, ShadcnElement, ValueElement, component='shadcn_collapsible.vue'):
     """The root of a collapsible region.
 
     :param value: whether the region starts out open.
@@ -56,8 +56,7 @@ class Collapsible(_Openable, ShadcnElement, ValueElement, component='shadcn_coll
                  **kwargs: Any,
                  ) -> None:
         super().__init__(value=bool(value), on_value_change=on_change, classes=classes, **kwargs)
-        if disabled:
-            self._props['disabled'] = True
+        self._init_disabled(disabled)
 
     def _value_to_model_value(self, value: Any) -> bool:
         return bool(value)
@@ -84,8 +83,7 @@ class CollapsibleTrigger(ShadcnElement, TextElement, component='shadcn_collapsib
                  **kwargs: Any,
                  ) -> None:
         super().__init__(text=text, classes=classes, **kwargs)
-        if as_child:
-            self._props['asChild'] = True
+        self._props['asChild'] = bool(as_child)
         if on_click is not None:
             self.on('click', on_click)
 

@@ -65,10 +65,16 @@ ValueError: Unknown button variant 'danger'. Valid options are: 'default', 'dest
 | 内联样式 | `.style('width: 12rem')` |
 | 透传 prop | `.props('flat')` |
 | 移动节点 | `.move(target, …)` |
-| 启用/禁用 | `.set_enabled(False)` |
+| 启用/禁用 | `.disabled = True` |
 | 可见性 | `.visible = False` |
 | 插槽 | `.add_slot('…', …)` |
 | 当前上下文 | `ui.context` |
+
+接收 `disabled=` 的组件（`Input`、`Textarea`、`Select`、`Checkbox`、`RadioGroup`、
+`Slider`、`Switch`、`Toggle`、`ToggleGroup`、`Button`、`Calendar`、`DatePicker`、
+`InputOTP`、`NativeSelect`、`Collapsible`、`AccordionItem`）都能在构造之后用
+`.disabled = True` / `.disabled = False` 开关；`Button` 原有的 `.set_enabled(False)`
+仍然可用，两者等价。
 
 此外，任何 shadcn 组件都能直接放进 `ui.row()` / `ui.column()` / `with` 块里，和原生组件
 混用。

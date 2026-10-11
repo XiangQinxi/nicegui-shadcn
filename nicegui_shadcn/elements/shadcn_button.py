@@ -176,6 +176,15 @@ class Button(ShadcnElement, default_classes=_BASE):
             self._props['disabled'] = True
         self.update()
 
+    @property
+    def disabled(self) -> bool:
+        """Whether the button is disabled."""
+        return bool(self._props.get('disabled', False))
+
+    @disabled.setter
+    def disabled(self, value: bool) -> None:
+        self.set_enabled(not value)
+
 
 def button(text: str = '', **kwargs: Any) -> Button:
     """Create a :class:`Button`. Shorthand for ``Button(text, **kwargs)``.

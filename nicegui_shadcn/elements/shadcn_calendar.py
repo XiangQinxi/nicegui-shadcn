@@ -12,7 +12,7 @@ from typing import Any
 
 from nicegui.elements.mixins.value_element import ValueElement
 
-from .base import ShadcnElement
+from .base import ShadcnElement, _Disableable
 
 __all__ = ['Calendar', 'calendar']
 
@@ -33,7 +33,7 @@ def _iso_date(value: Any) -> str:
     return str(value)
 
 
-class Calendar(ShadcnElement, ValueElement, component='shadcn_calendar.vue',
+class Calendar(_Disableable, ShadcnElement, ValueElement, component='shadcn_calendar.vue',
                default_classes=_CALENDAR_CLASSES):
     """A single-month calendar.
 
@@ -82,7 +82,7 @@ class Calendar(ShadcnElement, ValueElement, component='shadcn_calendar.vue',
             self._props['weekStartsOn'] = int(week_starts_on)
         self._props['numberOfMonths'] = int(number_of_months)
         self._props['fixedWeeks'] = bool(fixed_weeks)
-        self._props['disabled'] = bool(disabled)
+        self._init_disabled(disabled)
         self._props['readonly'] = bool(readonly)
         self._props['locale'] = str(locale)
         self._props['ariaLabel'] = str(aria_label)

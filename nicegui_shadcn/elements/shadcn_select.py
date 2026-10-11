@@ -15,7 +15,7 @@ from typing import Any
 
 from nicegui.elements.mixins.value_element import ValueElement
 
-from .base import ShadcnElement, normalize_options
+from .base import ShadcnElement, _Disableable, normalize_options
 
 __all__ = ['Select', 'select']
 
@@ -32,7 +32,7 @@ _SELECT_TRIGGER_CLASSES = (
 )
 
 
-class Select(ShadcnElement, ValueElement, component='shadcn_select.vue',
+class Select(_Disableable, ShadcnElement, ValueElement, component='shadcn_select.vue',
              default_classes=_SELECT_TRIGGER_CLASSES):
     """A dropdown list of options.
 
@@ -60,22 +60,12 @@ class Select(ShadcnElement, ValueElement, component='shadcn_select.vue',
         super().__init__(value=value, on_value_change=on_change, classes=classes, **kwargs)
         self._props['options'] = normalize_options(options or [])
         self._props['placeholder'] = placeholder
-        self._props['disabled'] = bool(disabled)
+        self._init_disabled(disabled)
 
     def _value_to_model_value(self, value: Any) -> str:
         # reka-ui shows the placeholder for `undefined`, and `''` is simply not a
         # valid item value, so both mean "nothing selected".
         return '' if value is None else str(value)
-
-    @property
-    def disabled(self) -> bool:
-        """Whether the control can be changed."""
-        return bool(self._props['disabled'])
-
-    @disabled.setter
-    def disabled(self, value: bool) -> None:
-        self._props['disabled'] = bool(value)
-        self.update()
 
     def set_options(self, options: Mapping[str, Any] | Iterable[Any]) -> None:
         """Replace the list of choices.

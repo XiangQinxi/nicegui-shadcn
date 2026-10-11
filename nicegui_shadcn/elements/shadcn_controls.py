@@ -12,7 +12,7 @@ from typing import Any
 
 from nicegui.elements.mixins.value_element import ValueElement
 
-from .base import ShadcnElement, _ORIENTATIONS, normalize_options, option
+from .base import ShadcnElement, _Disableable, _ORIENTATIONS, normalize_options, option
 
 __all__ = [
     'RadioGroup', 'Slider', 'Toggle', 'ToggleGroup',
@@ -36,7 +36,7 @@ _TOGGLE_CLASSES = (
 _TOGGLE_GROUP_CLASSES = 'flex w-fit items-center gap-1 rounded-md'
 
 
-class RadioGroup(ShadcnElement, ValueElement, component='shadcn_radio_group.vue', default_classes=_RADIO_GROUP_CLASSES):
+class RadioGroup(_Disableable, ShadcnElement, ValueElement, component='shadcn_radio_group.vue', default_classes=_RADIO_GROUP_CLASSES):
     """A radio group whose choices are declared as data.
 
     :param options: the choices, in any of the shapes
@@ -62,14 +62,13 @@ class RadioGroup(ShadcnElement, ValueElement, component='shadcn_radio_group.vue'
         super().__init__(value=value, on_value_change=on_change, classes=classes, **kwargs)
         self._props['options'] = normalize_options(options or [])
         self._props['orientation'] = option('radio group orientation', orientation, _ORIENTATIONS)
-        if disabled:
-            self._props['disabled'] = True
+        self._init_disabled(disabled)
 
     def _value_to_model_value(self, value: Any) -> str:
         return '' if value is None else str(value)
 
 
-class Slider(ShadcnElement, ValueElement, component='shadcn_slider.vue', default_classes=_SLIDER_CLASSES):
+class Slider(_Disableable, ShadcnElement, ValueElement, component='shadcn_slider.vue', default_classes=_SLIDER_CLASSES):
     """A single-thumb range slider.
 
     :param value: the initial value.
@@ -99,8 +98,7 @@ class Slider(ShadcnElement, ValueElement, component='shadcn_slider.vue', default
         self._props['max'] = max
         self._props['step'] = step
         self._props['orientation'] = option('slider orientation', orientation, _ORIENTATIONS)
-        if disabled:
-            self._props['disabled'] = True
+        self._init_disabled(disabled)
 
     def _value_to_model_value(self, value: Any) -> float:
         return 0.0 if value is None else float(value)
@@ -109,7 +107,7 @@ class Slider(ShadcnElement, ValueElement, component='shadcn_slider.vue', default
         return float(value)
 
 
-class Toggle(ShadcnElement, ValueElement, component='shadcn_toggle.vue', default_classes=_TOGGLE_CLASSES):
+class Toggle(_Disableable, ShadcnElement, ValueElement, component='shadcn_toggle.vue', default_classes=_TOGGLE_CLASSES):
     """A two-state button, like a switch the user has to press and release.
 
     :param text: the text to display.
@@ -129,8 +127,7 @@ class Toggle(ShadcnElement, ValueElement, component='shadcn_toggle.vue', default
                  **kwargs: Any,
                  ) -> None:
         super().__init__(value=bool(value), on_value_change=on_change, classes=classes, **kwargs)
-        if disabled:
-            self._props['disabled'] = True
+        self._init_disabled(disabled)
         if text:
             self._props['label'] = text
             with self:
@@ -144,7 +141,7 @@ class Toggle(ShadcnElement, ValueElement, component='shadcn_toggle.vue', default
         return bool(value)
 
 
-class ToggleGroup(ShadcnElement, ValueElement, component='shadcn_toggle_group.vue', default_classes=_TOGGLE_GROUP_CLASSES):
+class ToggleGroup(_Disableable, ShadcnElement, ValueElement, component='shadcn_toggle_group.vue', default_classes=_TOGGLE_GROUP_CLASSES):
     """A segmented control.
 
     :param options: the segments, in any of the shapes
@@ -174,8 +171,7 @@ class ToggleGroup(ShadcnElement, ValueElement, component='shadcn_toggle_group.vu
         self._props['options'] = normalize_options(options or [])
         self._props['type'] = 'multiple' if multiple else 'single'
         self._props['orientation'] = option('toggle group orientation', orientation, _ORIENTATIONS)
-        if disabled:
-            self._props['disabled'] = True
+        self._init_disabled(disabled)
 
     def _value_to_model_value(self, value: Any) -> Any:
         if value is None:

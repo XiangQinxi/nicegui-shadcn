@@ -56,7 +56,8 @@ accordion.value = 'returns'
 “全部收起”在多选模式下是正常状态，不需要额外开关。
 :::
 
-`accordion_item(disabled=True)` 会让该项不可点击，`aria-disabled` 也会同步。
+`accordion_item(disabled=True)` 会让该项不可点击，`aria-disabled` 也会同步；构造之后也可以
+用 `accordion_item.disabled = True` 切换。`Collapsible` 同理。
 
 :::{tip}
 `accordion_trigger` 的 `classes=` 会落到内层的 `<button>`，而不是外层的 `<h3>` —— 这是为了让
