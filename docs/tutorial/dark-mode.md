@@ -4,6 +4,13 @@
 变体被绑定到 NiceGUI 已经在切换的那个 class 上，shadcn 的设计 token 则在对应的选择器下重新
 定义。
 
+切换之后长什么样 —— `examples/demo.py` 中 Buttons 与 Display 两组在深色模式下的实拍：
+
+```{image} ../img/components-dark-mode.png
+:alt: 深色模式下的 Buttons 与 Display 组件实拍
+:width: 100%
+```
+
 ## 一行代码
 
 ```python

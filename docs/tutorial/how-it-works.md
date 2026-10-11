@@ -5,6 +5,13 @@
 扩展机制的一个实例：用 shadcn/ui 的设计语言包装 reka-ui 的原语，并把它们做成普通的
 NiceGUI 元素。*使用*它不需要任何构建步骤 —— 一切都在发布前编译好了。
 
+整条链路的全貌 —— 运行时组件如何走到屏幕上、构建期为什么用户什么都不用做、以及每一层验证各自拦截什么 —— 一张图看懂（图源 `docs/img/architecture.html`，样式取自项目自带的 `shadcn.css`）：
+
+```{image} ../img/architecture.png
+:alt: nicegui-shadcn 工作原理图：运行时链路、构建期流水线与验证层
+:width: 100%
+```
+
 ## 组成部分
 
 | 组成部分 | 作用 |

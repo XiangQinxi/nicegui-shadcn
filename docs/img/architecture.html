@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>nicegui-shadcn —— 工作原理</title>
+<link rel="stylesheet" href="../../nicegui_shadcn/static/shadcn.css">
+<style>
+  /* fallback token values in case the shipped stylesheet changes */
+  :root {
+    --background: #ffffff; --foreground: #0a0a0a;
+    --card: #ffffff; --card-foreground: #0a0a0a;
+    --muted: #f5f5f5; --muted-foreground: #737373;
+    --border: #e5e5e5; --primary: #171717; --primary-foreground: #fafafa;
+    --accent: #f5f5f5; --secondary: #f5f5f5;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 36px 40px 44px;
+    background: var(--background); color: var(--foreground);
+    font-family: ui-sans-serif, system-ui, "Segoe UI", Roboto, "Microsoft YaHei", "PingFang SC", sans-serif;
+    font-size: 13px; line-height: 1.55;
+  }
+  .wrap { width: 1150px; margin: 0 auto; }
+  h1 { font-size: 22px; font-weight: 600; margin: 0 0 2px; letter-spacing: -0.01em; }
+  .sub { color: var(--muted-foreground); margin: 0 0 26px; font-size: 13px; }
+  .panel {
+    border: 1px solid var(--border); border-radius: calc(var(--radius, 0.625rem) + 2px);
+    background: var(--card); padding: 18px 20px 20px; margin-bottom: 22px;
+  }
+  .panel > h2 {
+    font-size: 12px; font-weight: 600; letter-spacing: 0.08em;
+    color: var(--muted-foreground); margin: 0 0 16px;
+  }
+  .cols { display: grid; grid-template-columns: 1fr 340px; gap: 22px; align-items: start; }
+
+  .node {
+    border: 1px solid var(--border); border-radius: var(--radius, 0.625rem);
+    padding: 10px 14px; background: var(--background);
+  }
+  .node .t { font-weight: 600; font-size: 13px; }
+  .node .d { color: var(--muted-foreground); font-size: 12px; margin-top: 2px; }
+  .node .d code, .t code, .chip code, .side code {
+    font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+    font-size: 11.5px; background: var(--muted); border-radius: 4px; padding: 1px 5px;
+  }
+  .node.inverse { background: var(--primary); color: var(--primary-foreground); border-color: var(--primary); }
+  .node.inverse .d { color: color-mix(in srgb, var(--primary-foreground) 70%, transparent); }
+  .node.inverse .d code { background: color-mix(in srgb, var(--primary-foreground) 16%, transparent); color: inherit; }
+  .arrow { text-align: center; color: var(--muted-foreground); font-size: 13px; line-height: 1; padding: 5px 0; }
+  .arrow small { display: block; font-size: 10.5px; margin-top: 2px; }
+
+  .side { border: 1px dashed var(--border); border-radius: var(--radius, 0.625rem); padding: 12px 14px; background: var(--muted); }
+  .side .t { font-weight: 600; font-size: 12.5px; margin-bottom: 6px; }
+  .side ul { margin: 0; padding-left: 16px; color: var(--muted-foreground); font-size: 12px; }
+  .side li { margin-bottom: 5px; }
+  .side li b { color: var(--foreground); font-weight: 600; }
+
+  .flowrow { display: grid; grid-template-columns: 1fr 42px 1fr 42px 1fr; gap: 0; align-items: center; margin-bottom: 14px; }
+  .flowrow .arrow { padding: 0; }
+  .flowrow .node { height: 100%; display: flex; flex-direction: column; justify-content: center; }
+  .commit {
+    display: inline-block; margin-left: 6px; font-size: 10px; font-weight: 600; letter-spacing: 0.06em;
+    padding: 1px 6px; border-radius: 999px; border: 1px solid var(--border);
+    background: var(--secondary); color: var(--muted-foreground); vertical-align: 1px;
+  }
+  .chips { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .chip {
+    border: 1px solid var(--border); border-radius: 999px; padding: 3px 10px;
+    background: var(--background); font-size: 11.5px; color: var(--muted-foreground); white-space: nowrap;
+  }
+  .chip b { color: var(--foreground); font-weight: 600; }
+  .chip code { font-size: 11px; }
+  .chev { color: var(--muted-foreground); font-size: 11px; }
+  .legend { color: var(--muted-foreground); font-size: 11.5px; margin-top: 12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>nicegui-shadcn —— 工作原理</h1>
+  <p class="sub">给 NiceGUI 的 shadcn/ui 组件：Python 工厂进，带样式的 Vue 组件出 —— 编译产物随包提交，使用者永远不需要执行任何构建。</p>
+
+  <!-- ============ runtime ============ -->
+  <div class="panel">
+    <h2>运行时 —— 一个组件如何走到屏幕上</h2>
+    <div class="cols">
+      <div>
+        <div class="node inverse">
+          <div class="t">你的 NiceGUI 应用</div>
+          <div class="d"><code>shadcn.button('Save', variant='outline')</code> —— 纯 Python，普通的 NiceGUI 布局</div>
+        </div>
+        <div class="arrow">&#9660;<small>工厂调用</small></div>
+        <div class="node">
+          <div class="t"><code>nicegui_shadcn/elements/*.py</code></div>
+          <div class="d">工厂 + <code>ShadcnElement</code>：<code>classes=</code> 经 <code>cn()</code> 合并（tw&#8209;merge，调用者优先）&middot; class 字符串写在 Python 常量里</div>
+        </div>
+        <div class="arrow">&#9660;<small>Element / ValueElement</small></div>
+        <div class="node">
+          <div class="t">NiceGUI 核心</div>
+          <div class="d"><code>_props</code> 变成真正的 Vue props（<code>model-value</code> &rarr; <code>modelValue</code>）&middot; 事件走 websocket &middot; 页面外壳由 NiceGUI 提供（Quasar + Tailwind 层）</div>
+        </div>
+        <div class="arrow">&#9660;<small>导入期</small></div>
+        <div class="node">
+          <div class="t"><code>elements/*.vue</code> 由 NiceGUI 的 <code>VBuild</code> 解析</div>
+          <div class="d">单个根标签 &middot; 只用 Options API &middot; <code>data-&lt;stem&gt;</code> 标记 &middot; 与对应的 <code>.py</code> 一起以 ES module 提供</div>
+        </div>
+        <div class="arrow">&#9660;<small>浏览器</small></div>
+        <div class="node">
+          <div class="t">Vue 3.5 + reka-ui 原语</div>
+          <div class="d">共用 NiceGUI import map 里的同一个 Vue &middot; <code>reka-ui.js</code> 经 tree-shaking，<code>vue</code> 保持 external</div>
+        </div>
+        <div class="arrow">&#9660;</div>
+        <div class="node">
+          <div class="t">DOM，落在设计 token 上</div>
+          <div class="d"><code>&lt;button class="bg-primary …"&gt;</code> 由编译后的样式表解析：<code>--primary</code>、<code>--radius</code>，深色模式经 <code>body.body--dark</code></div>
+        </div>
+      </div>
+      <div class="side">
+        <div class="t"><code>theme.py</code> —— 导入时一次性注册</div>
+        <ul>
+          <li><b><code>/_nicegui_shadcn</code></b> 静态文件</li>
+          <li><b>import map 覆盖</b>，让 <code>.vue</code> 脚本能 <code>import 'reka-ui'</code></li>
+          <li><b><code>&lt;link rel="stylesheet"&gt;</code></b> 引入 <code>shadcn.css</code> —— 真 link 而不是 <code>add_css</code>，避免无样式内容闪烁</li>
+        </ul>
+        <div class="t" style="margin-top:10px"><code>theming.py</code> —— 运行期主题</div>
+        <ul>
+          <li><b><code>set_radius()</code> / <code>set_base_color()</code></b> 重写 CSS 自定义属性</li>
+          <li>经 <code>app.on_startup</code> 注入<b>一次</b>（head html 只能追加）</li>
+          <li>已打开的页面用 <code>run_javascript</code> 把变更<b>经 websocket 重放</b></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ build ============ -->
+  <div class="panel">
+    <h2>构建期 —— 为什么用户什么都不用构建</h2>
+    <div class="flowrow">
+      <div class="node">
+        <div class="t"><code>frontend/tailwind.css</code></div>
+        <div class="d"><code>@source</code> 扫描 <code>.py</code>/<code>.vue</code> &middot; <code>@theme inline</code> 暴露 token &middot; <code>source(none)</code></div>
+      </div>
+      <div class="arrow">&#9654;<small>Tailwind v4 CLI</small></div>
+      <div class="node">
+        <div class="t"><code>static/shadcn.css</code> <span class="commit">已提交</span></div>
+        <div class="d">约 201 kB &middot; 只含组件真正用到的 utilities</div>
+      </div>
+      <div class="arrow">&#9654;<small>随 wheel 发布</small></div>
+      <div class="node">
+        <div class="t"><code>pip install nicegui-shadcn</code></div>
+        <div class="d">用户端没有 node_modules、没有打包器、没有 CSS 流水线</div>
+      </div>
+    </div>
+    <div class="flowrow" style="margin-bottom:2px">
+      <div class="node">
+        <div class="t"><code>frontend/vendor/reka-entry.js</code></div>
+        <div class="d">只 re-export 被封装的那些原语</div>
+      </div>
+      <div class="arrow">&#9654;<small>esbuild，<code>--external:vue</code></small></div>
+      <div class="node">
+        <div class="t"><code>static/vendor/reka-ui.js</code> <span class="commit">已提交</span></div>
+        <div class="d">约 381 kB，经 tree-shaking 的 bundle</div>
+      </div>
+      <div class="arrow">&#9654;<small>+ <code>.vue</code> 模板</small></div>
+      <div class="node">
+        <div class="t"><code>poetry build</code> &rarr; wheel + sdist</div>
+        <div class="d"><code>check_dist.py</code> 断言这些产物真的随包发布</div>
+      </div>
+    </div>
+    <div class="legend"><code>npm run build</code> &asymp; 250 ms。改了 Python 里的 class 或模板却不重新构建，是发布无样式组件的第一大原因 —— Tailwind 只输出它看得见的东西。</div>
+  </div>
+
+  <!-- ============ verify ============ -->
+  <div class="panel">
+    <h2>验证 —— 每一层拦截上一层拦不住的问题</h2>
+    <div class="chips">
+      <span class="chip"><b>test_tw_merge.py</b> <code>cn()</code> 冲突</span><span class="chev">&#9656;</span>
+      <span class="chip"><b>test_render.py</b> 服务端 HTML</span><span class="chev">&#9656;</span>
+      <span class="chip"><b>audit_classes.py</b> class &isin; CSS</span><span class="chev">&#9656;</span>
+      <span class="chip"><b>check_examples.py</b> 文档可运行</span><span class="chev">&#9656;</span>
+      <span class="chip"><b>check_docstrings.py</b> API 参考</span><span class="chev">&#9656;</span>
+      <span class="chip"><b>check_readme.py</b> 中英一致</span><span class="chev">&#9656;</span>
+      <span class="chip"><b>test_theming.py</b> token</span><span class="chev">&#9656;</span>
+      <span class="chip"><b>check_dist.py</b> wheel/sdist</span><span class="chev">&#9656;</span>
+      <span class="chip"><b>demo + visual_check.mjs</b> 真实浏览器</span>
+    </div>
+    <div class="legend">最后一步在无头 Edge 里断言<em>计算样式</em> —— 只有这一层能证明设计 token（而不只是 class 名）真正落到了元素上。</div>
+  </div>
+</div>
+</body>
+</html>
